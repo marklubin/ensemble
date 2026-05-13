@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "ensemble cast",
+  "command": "/ensemble cast",
+  "description": "Join an Ensemble multi-persona session as one seat from your own Claude Code session. Connects Ensemble's per-session MCP server, primes the session with the named persona, and waits for turn / buzz-check events from the scheduler.",
+  "version": "0.1.0",
+  "arguments": [
+    {
+      "name": "persona",
+      "type": "string",
+      "required": true,
+      "description": "Persona ID or filename to load (e.g. 'keith' or 'specs/keith.md')."
+    },
+    {
+      "name": "session_url",
+      "type": "string",
+      "required": false,
+      "description": "Ensemble session join URL. If omitted, the command prompts for one and validates it before connecting."
+    },
+    {
+      "name": "seat",
+      "type": "string",
+      "required": false,
+      "description": "Override the seat slot to bind to. Defaults to whichever seat the session URL claims."
+    }
+  ],
+  "mcp": {
+    "transport": "http",
+    "url_arg": "session_url",
+    "auth": {
+      "type": "bearer",
+      "source": "session_url_token"
+    },
+    "tools": [
+      "buzzer.press",
+      "buzzer.pass",
+      "memory.read",
+      "memory.write",
+      "memory.list",
+      "cast.list",
+      "round.info"
+    ]
+  },
+  "outputs": [
+    {
+      "name": "transcript_stream",
+      "description": "Streaming text the persona produces during its turns; surfaced back to Ensemble via stdout."
+    }
+  ]
+}
