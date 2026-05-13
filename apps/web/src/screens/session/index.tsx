@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import type { SseEvent, SeatInfo } from "@ensemble/shared";
+import type { ModeratorAction, SeatInfo, SessionMeta, SseEvent } from "@ensemble/shared";
 
 import { openEventStream } from "../../lib/event-stream.ts";
 import { createUiBridgeClient, type UiBridgeClient } from "../../lib/ui-bridge-client.ts";
 import { SessionTurnCard } from "../../components/SessionTurnCard.tsx";
-import { SessionModeratorCard, type ModeratorAction } from "../../components/SessionModeratorCard.tsx";
+import { SessionModeratorCard } from "../../components/SessionModeratorCard.tsx";
 import { SessionMemoryPanel } from "../../components/SessionMemoryPanel.tsx";
 import { SessionDock } from "../../components/SessionDock.tsx";
 
@@ -13,21 +13,10 @@ import { initialSessionState, sessionReducer } from "./reducer.ts";
 import "./session.css";
 
 /**
- * Session metadata fetched from `GET /sessions/:id` (server endpoint owned
- * by Agent A; we mock-fetch it here). Shape documented in HANDOFF.md.
+ * Session metadata fetched from `GET /sessions/:id`. Re-exported from
+ * @ensemble/shared so callers can keep importing from this module.
  */
-export interface SessionMeta {
-  session_id: string;
-  template: string;        // e.g. "Debate", "Roundtable"
-  scenario: string;
-  scenario_format: string;
-  rounds_planned: number;
-  cast: SeatInfo[];
-  human_seat_id: string | null;
-  turn_taking: "round-robin" | "shuffled" | "host-driven" | "poll" | "self-select";
-  started_at: string | null;
-  cost_so_far_usd: number;
-}
+export type { SessionMeta } from "@ensemble/shared";
 
 export interface SessionScreenProps {
   /** Override fetch (tests). */

@@ -125,19 +125,24 @@ export function CastingScreen() {
     if (!template || !canSubmit) return;
     setSubmitting(true);
     setSubmitError(null);
+    const personaById = new Map(personas.map((p) => [p.id, p] as const));
     const req: CreateSessionRequest = {
       template_id: template.id,
       scenario,
+      scenario_format: template.scenario_format,
       cast: seats.map((s) => ({
         seat_id: s.seat_id,
         persona_id: s.persona_id,
+        persona_name: personaById.get(s.persona_id)?.name ?? s.persona_id,
         role: s.role || undefined,
         runtime_type: s.runtime_type,
       })),
+      turn_taking_mode: template.turn_taking_mode,
       length:
         lengthMode === "open-ended"
           ? { kind: "open-ended" }
-          : { kind: "n-rounds", rounds },
+          : { kind: "n_rounds", n: rounds },
+      cooldown_rounds: template.cooldown_rounds,
     };
     try {
       const { session_id } = await api.sessions.create(req);

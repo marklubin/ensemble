@@ -57,11 +57,26 @@ describe("api-client mock fallback", () => {
     const r = await api.sessions.create({
       template_id: "debate",
       scenario: "Resolved: X",
+      scenario_format: "motion",
       cast: [
-        { persona_id: "alex-chen", role: "Pro", runtime_type: "managed-agents" },
-        { persona_id: "jordan-rivera", role: "Con", runtime_type: "managed-agents" },
+        {
+          seat_id: "s1",
+          persona_id: "alex-chen",
+          persona_name: "Alex Chen",
+          role: "Pro",
+          runtime_type: "managed-agents",
+        },
+        {
+          seat_id: "s2",
+          persona_id: "jordan-rivera",
+          persona_name: "Jordan Rivera",
+          role: "Con",
+          runtime_type: "managed-agents",
+        },
       ],
+      turn_taking_mode: "shuffled",
       length: { kind: "open-ended" },
+      cooldown_rounds: 1,
     });
     expect(r.session_id.startsWith("mock-")).toBe(true);
   });

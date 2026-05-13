@@ -1,17 +1,14 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
-import { z } from "zod";
 
 import {
-  ScenarioFormat,
-  SeatInfo,
-  TurnTakingMode,
+  CreateSessionRequest,
   type SseEvent,
 } from "@ensemble/shared";
 
 import { EventBus, SessionScheduler } from "../scheduler/index.ts";
 import { runtimes as runtimeRegistry } from "../runtimes/index.ts";
-import { sessionStore, type SessionLength, type SessionState } from "./store.ts";
+import { sessionStore, type SessionState } from "./store.ts";
 
 /**
  * Phase-1 session HTTP routes.
@@ -32,24 +29,9 @@ import { sessionStore, type SessionLength, type SessionState } from "./store.ts"
  * helpers exported below.
  */
 
-// ─── Zod request schemas ──────────────────────────────────────────────
-
-const SessionLengthSchema: z.ZodType<SessionLength> = z.union([
-  z.object({ kind: z.literal("open-ended") }),
-  z.object({ kind: z.literal("n_rounds"), n: z.number().int().min(1) }),
-]);
-
-export const CreateSessionRequest = z.object({
-  template_id: z.string().min(1),
-  scenario: z.string().min(1),
-  scenario_format: ScenarioFormat.default("open"),
-  cast: z.array(SeatInfo).min(1),
-  turn_taking_mode: TurnTakingMode,
-  length: SessionLengthSchema.default({ kind: "open-ended" }),
-  cooldown_rounds: z.number().int().min(0).default(1),
-  host_seat_id: z.string().optional(),
-});
-export type CreateSessionRequest = z.infer<typeof CreateSessionRequest>;
+// `CreateSessionRequest` lives in @ensemble/shared — import re-exported
+// for callers that previously consumed it from this module.
+export { CreateSessionRequest } from "@ensemble/shared";
 
 // ─── Test seam: per-session runtime injection ─────────────────────────
 
