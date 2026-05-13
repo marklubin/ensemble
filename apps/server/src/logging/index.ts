@@ -26,6 +26,8 @@
  * `index.test.ts`.
  */
 
+import { recordLog } from "./ring-buffer.ts";
+
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface LogFields {
@@ -46,6 +48,9 @@ export function log(
   // Fly's log indexer reads anything on stdout. Single line JSON.
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(entry));
+  // Also push to the in-memory ring buffer if LOG_RING_BUFFER_SIZE > 0.
+  // E2E specs read it via GET /__logs for per-test diagnostics.
+  recordLog(entry);
 }
 
 export const logger = {

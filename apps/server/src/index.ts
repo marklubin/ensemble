@@ -102,6 +102,21 @@ app.get("/health", (c) =>
   }),
 );
 
+// Test-only log retrieval. Returns nothing useful in production
+// (ring buffer is disabled unless LOG_RING_BUFFER_SIZE > 0). E2E
+// global teardown fetches this on test failure to bundle alongside
+// the Playwright trace.
+app.get("/__logs", async (c) => {
+  const { getLogsSince, ringBufferEnabled } = await import(
+    "./logging/ring-buffer.ts"
+  );
+  if (!ringBufferEnabled()) {
+    return c.json({ enabled: false, logs: [] });
+  }
+  const since = c.req.query("since") ?? undefined;
+  return c.json({ enabled: true, logs: getLogsSince(since) });
+});
+
 app.route("/sessions", sessions);
 app.route("/sessions", createMemoryRoutes(memory));
 app.route("/sessions", createModeratorRoutes());
