@@ -2,27 +2,30 @@
  * LocalCliTransport — drives a real, local Claude Code CLI session.
  *
  * **This is the ONLY file in `apps/server/src/runtimes/claude-code/`
- * allowed to import `child_process`, `node:child_process`, `bun`'s
- * `Bun.spawn`, or any other subprocess primitive.** The invariant is
- * enforced by `no-cli-leakage.test.ts`. If you need a new transport,
- * either keep it pure or put its subprocess code here.
+ * allowed to import subprocess primitives.** The invariant is
+ * enforced by `no-cli-leakage.test.ts`.
  *
- * Status (v1): SKETCH. The Claude Code CLI does not yet expose a
- * stable, scriptable headless mode suitable for SPI-driven turn
- * exchanges. The runtime ships under a feature flag (off by default)
- * and `MockMcpTransport` is the supported path. This class exists so:
+ * Strategy: one `claude -p` subprocess per turn. Stateless across
+ * turns (full context is rebuilt from `TurnEvent[]` each time). The
+ * persona spec drives `--system-prompt`; an Ensemble MCP server is
+ * attached via `--mcp-config` so the persona can call host tools
+ * (buzzer, memory, cast.list, etc.) from inside its agent loop.
  *
- *   1. The subprocess seam is real, and the lint rule has a real file
- *      to point at.
- *   2. When the CLI surface stabilises (post-v1), the wiring lives in
- *      one place and the rest of the runtime doesn't change.
+ * Multi-turn state coherence comes from re-feeding the transcript on
+ * every turn — same approach the OpenAI/Anthropic adapters use. When
+ * the CLI ships a stable resumable session shape we can switch to
+ * `--continue` / `--resume`.
  *
- * Until then `open` throws a clear error telling the caller to use
- * `MockMcpTransport` or to write `BLOCKED.md`.
+ * Output streaming: `--output-format text` with `--print` streams
+ * stdout progressively, which we yield as chunks.
  */
 
 import { spawn } from "node:child_process";
-import type { ChildProcessWithoutNullStreams } from "node:child_process";
+import type { ChildProcessByStdio } from "node:child_process";
+import type { Readable } from "node:stream";
+import { writeFile, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import type { ClaudeCodeTransport } from "./transport.ts";
 import type { ClaudeCodeMessage, SessionBrief } from "./types.ts";
@@ -30,17 +33,22 @@ import type { ClaudeCodeMessage, SessionBrief } from "./types.ts";
 export interface LocalCliTransportOptions {
   /** Path to the `claude` CLI binary. Defaults to `claude` on $PATH. */
   binary?: string;
-  /** Extra args to pass after the subcommand (e.g. `["--print", "--output-format=stream-json"]`). */
-  args?: string[];
-  /** Working directory for the spawned CLI; defaults to process.cwd(). */
+  /** Model alias to use (sonnet|opus|haiku, or full id). Default: haiku 4.5. */
+  model?: string;
+  /** Max wall-clock seconds for a single turn. Default: 60. */
+  timeoutSec?: number;
+  /** Max USD budget per turn (passed to --max-budget-usd). Default: 0.10. */
+  maxBudgetUsd?: number;
+  /** Working directory for the spawned CLI; defaults to a per-session temp dir. */
   cwd?: string;
-  /** Environment overlay for the spawned CLI. */
-  env?: Record<string, string>;
 }
 
 interface SpawnedSession {
-  /** Live child process for this seat. */
-  child: ChildProcessWithoutNullStreams;
+  brief: SessionBrief;
+  mcpConfigPath: string;
+  workDir: string;
+  /** Background-running subprocess for this seat (only during an active turn). */
+  child?: ChildProcessByStdio<null, Readable, Readable>;
 }
 
 export class LocalCliTransport implements ClaudeCodeTransport {
@@ -51,45 +59,159 @@ export class LocalCliTransport implements ClaudeCodeTransport {
     this.options = options;
   }
 
-  async open(_brief: SessionBrief): Promise<{ session_id: string }> {
-    // The live wiring is intentionally not implemented in v1; see file
-    // header. We still touch `spawn` (in `spawnChild`, below) so the
-    // import isn't dead code, but the production path throws cleanly.
-    throw new Error(
-      "LocalCliTransport: live wiring is a v1.5 deliverable. " +
-        "Use MockMcpTransport for tests and gate the runtime behind " +
-        "CLAUDE_CODE_RUNTIME_ENABLED. See apps/server/src/mcp/slash-command/README.md.",
-    );
+  async open(brief: SessionBrief): Promise<{ session_id: string }> {
+    const id = `claude-cli-${brief.ensemble_session_id}-${brief.seat_id}-${Math.random().toString(36).slice(2, 8)}`;
+    // Each session gets its own temp dir so concurrent seats don't
+    // collide on the MCP config file or any CLI-created scratch.
+    const workDir = await mkdtemp(join(tmpdir(), "ensemble-claude-"));
+
+    // Build per-seat MCP config pointing at Ensemble. The token scopes
+    // tool access to (session_id, seat_id) on the server side.
+    const mcpConfig = {
+      mcpServers: {
+        ensemble: {
+          type: "http" as const,
+          url: brief.ensemble_mcp_url,
+          headers: { Authorization: `Bearer ${brief.ensemble_mcp_token}` },
+        },
+      },
+    };
+    const mcpConfigPath = join(workDir, "mcp-config.json");
+    await writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), "utf-8");
+
+    this.sessions.set(id, { brief, mcpConfigPath, workDir });
+    return { session_id: id };
   }
 
-  async *send(_sessionId: string, _message: ClaudeCodeMessage): AsyncIterable<string> {
-    throw new Error("LocalCliTransport: live wiring is a v1.5 deliverable.");
-    // Unreachable but keeps the function an async generator.
-    yield "";
+  async *send(
+    sessionId: string,
+    message: ClaudeCodeMessage,
+  ): AsyncIterable<string> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error(`LocalCliTransport: unknown session ${sessionId}`);
+    }
+    const { brief, mcpConfigPath, workDir } = session;
+    const model = this.options.model ?? "claude-haiku-4-5-20251001";
+    const binary = this.options.binary ?? "claude";
+    const timeoutMs = (this.options.timeoutSec ?? 60) * 1000;
+    const budget = this.options.maxBudgetUsd ?? 0.1;
+
+    const systemPrompt = buildSystemPrompt(brief, message);
+
+    const args = [
+      "-p",
+      message.prompt,
+      "--system-prompt",
+      systemPrompt,
+      "--mcp-config",
+      mcpConfigPath,
+      "--no-session-persistence",
+      "--model",
+      model,
+      "--output-format",
+      "text",
+      "--dangerously-skip-permissions",
+      "--max-budget-usd",
+      String(budget),
+    ];
+
+    const child = spawn(binary, args, {
+      cwd: this.options.cwd ?? workDir,
+      env: {
+        ...process.env,
+        // Force minimal-mode so Claude Code doesn't try to read user
+        // CLAUDE.md, hook configs, etc. Keeps the seat hermetic.
+        CLAUDE_CODE_SIMPLE: "1",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    }) as ChildProcessByStdio<null, Readable, Readable>;
+
+    session.child = child;
+    const onTimeout = setTimeout(() => {
+      try {
+        child.kill();
+      } catch {
+        // ignore
+      }
+    }, timeoutMs);
+
+    try {
+      const decoder = new TextDecoder();
+      const stderrChunks: string[] = [];
+      child.stderr.on("data", (chunk: Buffer) =>
+        stderrChunks.push(decoder.decode(chunk)),
+      );
+
+      // Yield stdout chunks as they arrive.
+      for await (const chunk of child.stdout) {
+        const text = decoder.decode(chunk as Buffer);
+        if (text.length > 0) yield text;
+      }
+
+      // Wait for the process to fully exit so we can check the code.
+      const code = await new Promise<number | null>((resolve) =>
+        child.once("close", (c) => resolve(c)),
+      );
+      if (code !== 0 && code !== null) {
+        const stderr = stderrChunks.join("");
+        throw new Error(
+          `claude exited ${code}${stderr ? `: ${stderr.slice(0, 400)}` : ""}`,
+        );
+      }
+    } finally {
+      clearTimeout(onTimeout);
+      session.child = undefined;
+    }
   }
 
   async close(sessionId: string): Promise<void> {
     const session = this.sessions.get(sessionId);
     if (!session) return;
     try {
-      session.child.kill();
-    } finally {
-      this.sessions.delete(sessionId);
+      session.child?.kill();
+    } catch {
+      // already exited
     }
+    try {
+      await rm(session.workDir, { recursive: true, force: true });
+    } catch {
+      // best effort
+    }
+    this.sessions.delete(sessionId);
   }
+}
 
-  /**
-   * Reserved for the v1.5 wiring. Encapsulates the only call to
-   * `spawn` in the codebase. Not invoked by `open` yet — keeping the
-   * subprocess seam concrete and honest while we wait for a stable
-   * scriptable CLI surface.
-   */
-  protected spawnChild(args: string[]): ChildProcessWithoutNullStreams {
-    const binary = this.options.binary ?? "claude";
-    return spawn(binary, [...args, ...(this.options.args ?? [])], {
-      cwd: this.options.cwd,
-      env: { ...process.env, ...(this.options.env ?? {}) },
-      stdio: ["pipe", "pipe", "pipe"],
-    }) as ChildProcessWithoutNullStreams;
-  }
+/**
+ * Compose the system prompt sent to `claude -p`. We blend the persona's
+ * system prompt with light scaffolding that:
+ *   - reminds the model it's playing a role in a multi-persona scene
+ *   - lists the cast so cross-references make sense
+ *   - notes the Host API tools available via the `ensemble.*` namespace
+ */
+function buildSystemPrompt(
+  brief: SessionBrief,
+  message: ClaudeCodeMessage,
+): string {
+  const cast = brief.cast
+    .map((s) => `  - ${s.persona_name}${s.role ? ` (${s.role})` : ""}`)
+    .join("\n");
+  const buzzPolicy =
+    brief.persona.buzz_in_policy ?? "Respond when you have something to add.";
+  const tail =
+    message.kind === "buzz_check"
+      ? `\n\nThis is a BUZZ-CHECK. Decide if you want to speak next. ` +
+        `Call the tool \`ensemble.buzzer.press({intensity, intent, nonce: "${message.nonce}"})\` ` +
+        `if yes (intensity 0-10, intent one sentence), or ` +
+        `\`ensemble.buzzer.pass({reason, nonce: "${message.nonce}"})\` if no. ` +
+        `Do not produce free-form text — only call the tool.`
+      : `\n\nIt is now your turn. Respond as ${brief.persona.name} in ` +
+        `first person, in 1-3 short sentences. Stay in character.`;
+  return (
+    `${brief.persona.system_prompt}\n\n` +
+    `## Scene\n${brief.scenario}\n\n` +
+    `## Cast\n${cast}\n\n` +
+    `## Buzz-in policy\n${buzzPolicy}\n` +
+    `${tail}`
+  );
 }

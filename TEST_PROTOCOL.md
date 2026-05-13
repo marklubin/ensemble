@@ -64,19 +64,24 @@ Work through these before tagging a new version. Tick each.
 - [ ] Run `ENSEMBLE_TEST_MODE=live bun test apps/server/tests/live/` — green, non-empty turns.
 - [ ] Manually start a session in the browser against the live backend (`ANTHROPIC_API_KEY` set), small cast, 1 round. Watch the script populate in real time.
 
-### Claude Code integration (v1.5 — manual only)
+### Claude Code integration (v1.5)
 
 - [ ] With `CLAUDE_CODE_RUNTIME_ENABLED=true`, `GET /health` includes `claude-code`.
 - [ ] Slash-command manifest at `apps/server/src/mcp/slash-command/manifest.json` validates as JSON.
-- [ ] (Deferred to v1.5) `/ensemble cast <persona>` from inside Claude Code connects an agent to the session lobby.
+- [ ] `claude` binary on `$PATH` (or set `CLAUDE_BINARY=/full/path`).
+- [ ] Run the live test:
+      `ENSEMBLE_TEST_MODE=live bun test apps/server/tests/live/claude-code.live.test.ts`
+      — green, response in the persona's voice, under 10s on Haiku 4.5.
+- [ ] Cast a `claude-code`-backed seat in a real browser session;
+      turn appears in the script. Cost under ~$0.05/turn on Haiku.
 
-## Known gaps documented for v1.1
+## Known gaps documented for v2
 
 - 4 of 6 Playwright specs are scaffolded as `test.skip()` against
   aspirational selectors that don't yet match the actual UI shape.
-  Either refactor specs to match F+G's screens or add the missing
-  affordances. Track in a v1.1 milestone.
-- Claude Code runtime ships `MockMcpTransport`-only; `LocalCliTransport`
-  is a stub. Real live wiring is v1.5.
-- Persona library has no auth boundary; for v1 it's single-user / local.
+  Track in a v2.0 milestone.
+- Claude Code runtime is stateless across turns (full context replayed
+  each call). When the CLI ships a stable `--resume` session id we'll
+  switch to that for cheaper multi-turn sessions.
+- Persona library has no auth boundary; for v1.5 it's single-user / local.
 - Session and memory CRUD endpoints likewise have no auth boundary.
