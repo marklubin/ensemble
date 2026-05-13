@@ -37,6 +37,11 @@
   .topbar .crumbs { color: var(--muted); }
   .topbar .crumbs b { color: var(--ink-soft); font-weight: 600; }
   .doc-meta { margin-left: auto; color: var(--muted); font-size: 12px; font-style: italic; }
+  .doc-nav { display: flex; gap: 6px; }
+  .doc-nav a { font-family: -apple-system, sans-serif; font-size: 11px; color: var(--ink-soft); text-decoration: none; border: 1px solid var(--rule); padding: 3px 9px; border-radius: 3px; }
+  .doc-nav a:hover { background: var(--bg-2); }
+  .doc-nav a.active { background: var(--accent); color: #faf2db; border-color: var(--accent); }
+  .doc-nav a.superseded { text-decoration: line-through; opacity: 0.5; }
 
   /* LAYOUT */
   .wrap { display: grid; grid-template-columns: 220px 1fr; gap: 56px; max-width: 1100px; margin: 0 auto; padding: 88px 36px 120px; }
@@ -148,6 +153,15 @@
     <span class="brand">ensemble</span>
     <span class="sep"></span>
     <span class="crumbs">Design · <b>Session Configuration Space</b></span>
+    <span class="sep"></span>
+    <div class="doc-nav">
+      <a href="article.html">Article</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="dimensions.html" class="active">Dimensions</a>
+      <a href="runtime-interface.html">Runtime spec</a>
+      <a href="actor-protocol.html" class="superseded" title="Superseded">Protocol</a>
+      <a href="mockups/templates/index.html">Mockups</a>
+    </div>
     <span class="doc-meta">v0.1 · 2026-05-12</span>
   </div>
 </div>

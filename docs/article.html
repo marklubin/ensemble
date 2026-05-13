@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ensemble — A pluggable runtime architecture for multi-persona sessions</title>
+<style>
+  :root {
+    --bg: #f6f3ec;
+    --bg-2: #efeadf;
+    --ink: #1c1a17;
+    --ink-soft: #3a3631;
+    --muted: #8a8278;
+    --muted-2: #b5ad9e;
+    --rule: #c9bfa9;
+    --rule-soft: #ddd3bb;
+    --accent: #6a4c1f;
+    --moderator: #7a5a16;
+    --moderator-bg: #faf2db;
+    --moderator-rule: #d9b766;
+    --spi: #2b5b4e;
+    --api: #843a3a;
+    --code-bg: #ece6d5;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif; font-size: 18px; line-height: 1.75; }
+
+  .topbar { position: fixed; top: 0; left: 0; right: 0; backdrop-filter: blur(8px); background: rgba(246, 243, 236, 0.85); border-bottom: 1px solid var(--rule-soft); z-index: 10; }
+  .topbar-inner { max-width: 1100px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; font-size: 13px; }
+  .brand { font-family: "Iowan Old Style", "Palatino", serif; font-style: italic; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; font-size: 15px; }
+  .topbar .sep { width: 1px; height: 18px; background: var(--rule-soft); }
+  .topbar .crumbs { color: var(--muted); }
+  .topbar .crumbs b { color: var(--ink-soft); font-weight: 600; }
+  .doc-nav { display: flex; gap: 6px; }
+  .doc-nav a { font-family: -apple-system, sans-serif; font-size: 11px; color: var(--ink-soft); text-decoration: none; border: 1px solid var(--rule); padding: 3px 9px; border-radius: 3px; }
+  .doc-nav a:hover { background: var(--bg-2); }
+  .doc-nav a.active { background: var(--accent); color: #faf2db; border-color: var(--accent); }
+  .doc-nav a.superseded { text-decoration: line-through; opacity: 0.5; }
+  .doc-meta { margin-left: auto; color: var(--muted); font-size: 12px; font-style: italic; }
+
+  .page { max-width: 680px; margin: 0 auto; padding: 96px 32px 120px; }
+
+  .cover { padding-bottom: 36px; border-bottom: 1px solid var(--rule); margin-bottom: 36px; }
+  .cover .kicker { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+  .cover h1 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 44px; line-height: 1.1; margin: 0 0 18px; letter-spacing: -0.015em; font-weight: 600; }
+  .cover h1 em { font-style: italic; color: var(--accent); }
+  .cover .byline { font-size: 16px; color: var(--ink-soft); font-style: italic; max-width: 620px; }
+  .cover .stamp { margin-top: 16px; font-family: -apple-system, sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+
+  h2 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 26px; font-weight: 600; margin: 56px 0 6px; letter-spacing: -0.005em; line-height: 1.2; }
+  h2 + p { margin-top: 14px; }
+
+  h3 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 19px; font-weight: 600; font-style: italic; margin: 36px 0 8px; color: var(--ink-soft); }
+
+  section.body > p:first-of-type::first-letter {
+    font-family: "Iowan Old Style", "Palatino", serif;
+    font-weight: 600;
+    font-size: 3.6em;
+    line-height: 0.9;
+    float: left;
+    margin: 6px 8px 0 0;
+    color: var(--accent);
+  }
+
+  p { margin: 14px 0; }
+  p strong { font-weight: 600; }
+  p em { font-style: italic; color: var(--ink-soft); }
+
+  blockquote { margin: 18px 0; padding: 4px 22px; border-left: 3px solid var(--rule); color: var(--ink-soft); font-style: italic; font-size: 17px; }
+
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(106, 76, 31, 0.3); }
+  a:hover { border-bottom-color: var(--accent); }
+
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 15px; }
+
+  .note { background: var(--moderator-bg); border-left: 3px solid var(--moderator-rule); padding: 14px 18px; margin: 22px 0; border-radius: 0 4px 4px 0; font-size: 15px; }
+  .note .label { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--moderator); margin-bottom: 4px; }
+  .note p { margin: 4px 0; }
+  .note p:last-child { margin-bottom: 0; }
+
+  .summary-card { margin: 24px 0; background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 22px 26px; }
+  .summary-card .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .summary-card .col h4 { margin: 0 0 8px; font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+  .summary-card .col.spi h4 { color: var(--spi); }
+  .summary-card .col.api h4 { color: var(--api); }
+  .summary-card .col p { font-size: 14.5px; margin: 4px 0 0; color: var(--ink-soft); }
+
+  footer { margin-top: 90px; padding-top: 22px; border-top: 1px solid var(--rule); font-family: -apple-system, sans-serif; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+
+  @media (max-width: 720px) {
+    .page { padding: 88px 24px 80px; }
+    .summary-card .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">ensemble</span>
+    <span class="sep"></span>
+    <span class="crumbs">Reading · <b>The design</b></span>
+    <span class="sep"></span>
+    <div class="doc-nav">
+      <a href="article.html" class="active">Article</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="dimensions.html">Dimensions</a>
+      <a href="runtime-interface.html">Runtime spec</a>
+      <a href="actor-protocol.html" class="superseded" title="Superseded">Protocol</a>
+      <a href="mockups/templates/index.html">Mockups</a>
+    </div>
+    <span class="doc-meta">2026-05</span>
+  </div>
+</div>
+
+<main class="page">
+
+  <header class="cover">
+    <div class="kicker">Ensemble · Long-form</div>
+    <h1>A pluggable runtime architecture for <em>multi-persona sessions.</em></h1>
+    <p class="byline">A persona is a specification, not an implementation. The runtime is who's at the controller. The contract between them is two thin interfaces in opposite directions, and the rest of the system follows from that.</p>
+    <div class="stamp">May 2026 · Mark Lubin</div>
+  </header>
+
+
+  <section class="body">
+
+    <h2>What Ensemble is</h2>
+
+    <p>Ensemble is a web app for running multi-persona scene simulations — debates, roundtables, interviews, writers' rooms, mock trials. You assemble a cast of personas, hand them a scenario, and watch them play it out as a live screenplay-style transcript. Each persona has its own voice, role, and behavior. Some sessions have a moderator who summarizes and fact-checks. Some sessions have a human at the keyboard, who shows up as just another seat at the table. The scheduler decides whose turn it is; the personas respond in their own voices; the result is a readable transcript that — if it's working — feels less like LLM output and more like a scene.</p>
+
+    <p>A persona is a portable specification: a name, a system prompt, a role hint, a voice signature, a short policy describing when this persona wants to speak. That spec lives in a library, decoupled from anything that knows how to generate text. The implementation — the thing that actually produces the persona's responses — lives somewhere else. It might be a hosted agent service. It might be a local model. It might be a Claude Code session a user is running on their own machine. It might be a person at a keyboard.</p>
+
+    <p>The same session can mix all of those.</p>
+
+
+    <h2>The pluggability problem</h2>
+
+    <p>Most multi-agent tools bake in a single backend. Every persona runs on the same model, through the same chat-completions loop, with the same tool-call plumbing built into the app. That made sense when "LLM" effectively meant "an OpenAI API key." It doesn't make sense now.</p>
+
+    <p>Managed agent services from the major model providers are first-class: Anthropic's Managed Agents, OpenAI's Agents SDK, Letta's persistent agent platform. Claude Code is a usable agent runtime in its own right. Local models are good enough for many roles. The Model Context Protocol is becoming the common language for agents to call out to external capabilities. And one seat in any session might simply be a human at a keyboard, who behaves differently than any model but should still be a peer participant in the scene rather than an exception bolted onto a model-only system.</p>
+
+    <p>The architecture we want lets each persona pick its own runtime — not as a configuration option, but as a structural property of the system. A session where one seat runs on Managed Agents, another on Claude Code, another on a local Letta agent, and another on a person typing should require no special handling. Same session, four runtimes, one transcript.</p>
+
+    <p>This forces a question: <em>what's the contract between the application and a runtime?</em> Whatever it is, it has to be small enough that adding a new runtime is a few hundred lines of code, and complete enough that the application doesn't need to know which runtime is behind which seat.</p>
+
+
+    <h2>Two interfaces</h2>
+
+    <p>The contract has two halves, with traffic flowing in opposite directions.</p>
+
+    <div class="summary-card">
+      <div class="two-col">
+        <div class="col spi">
+          <h4>SPI &middot; what runtimes implement</h4>
+          <p>Ensemble calls into this. Four operations: <em>attach</em>, <em>take turn</em>, <em>buzz check</em>, <em>detach</em>. Plus capability flags declaring what each instance supports.</p>
+        </div>
+        <div class="col api">
+          <h4>Host API &middot; what Ensemble provides</h4>
+          <p>The runtime — and the persona inside it — calls into this. Served as MCP tools: <em>buzzer</em>, <em>memory</em>, <em>session metadata</em>, privileged <em>moderator</em> extensions.</p>
+        </div>
+      </div>
+    </div>
+
+    <p>The first half is the <strong>Service Provider Interface</strong>. This is what a runtime implements so Ensemble can call into it. When the scheduler decides it's a particular seat's turn, it calls a method on that seat's runtime; the runtime produces a streamed response; the scheduler receives it. The SPI is small — four operations — because the runtime is doing the actual work of holding conversation state, calling tools, and generating text. Ensemble doesn't reimplement any of that.</p>
+
+    <p>The second half is the <strong>Host API</strong>. This is what Ensemble exposes back to whatever's running inside the runtime. The persona's agent loop — whether that's a Managed Agents session, a Claude Code session, or any other MCP-speaking runtime — can call into the Host API as if it were calling any other tool. Through the Host API, the persona can buzz in to request a turn, read and write its own memory, query session metadata, or (if it's the moderator) reach for privileged operations like forcing a speaker or putting another persona on cooldown.</p>
+
+    <p>The Host API is served as MCP tools on a per-session endpoint. The runtime is given the URL and an auth token when it's first attached. That's the whole integration: tell the runtime <em>"here's where Ensemble lives,"</em> and the runtime's native MCP support handles everything else.</p>
+
+    <p>This is the standard plug-in architecture pattern with a bidirectional contract — the Java/OSGi world calls it "SPI plus Host API," the WebAssembly Component Model calls the same shape "imports and exports." The names matter less than the property they describe: both sides expose what they offer, both sides consume what the other offers, and neither side needs to know the other's internals.</p>
+
+
+    <h2>The four operations</h2>
+
+    <p>The SPI is a runtime adapter's whole obligation. Four operations and a capability set.</p>
+
+    <h3>Attach</h3>
+    <p>Provisions a fresh instance of a persona inside the runtime. What "provisioning" means depends on the runtime: for Managed Agents, it opens a new Session against an Agent definition built from the persona spec. For Claude Code, it registers a slot in a channel coordinator that an externally-running Claude Code session will later connect to. For a human seat, it registers the seat with the web UI's input bridge. The return value is an opaque handle Ensemble uses to address that instance for the rest of the session, along with the set of capabilities this particular instance supports.</p>
+
+    <h3>Take turn</h3>
+    <p>The main operation. The scheduler calls it when it's the persona's turn to speak. The arguments are the handle and a list of events the runtime hasn't seen yet — turns by other personas since this instance last spoke, moderator messages, scenario changes. The runtime brings the persona up to date, produces a response, and streams it back chunk by chunk. Ensemble doesn't dictate how the response is composed; it just consumes the stream and renders it to the transcript.</p>
+
+    <h3>Buzz check</h3>
+    <p>The polling mechanic for poll-mode turn-taking. In poll mode, between turns, the scheduler pauses and asks every idle, non-cooldown persona a single question: <em>given what just happened, do you want to speak?</em> The runtime returns a score from zero to ten, a one-sentence statement of intent describing what the persona would contribute, and a flag indicating whether the persona is willing to pass entirely. The scheduler picks the highest scorer; that intent then becomes a hint passed back to the winner on the next take-turn call, which keeps them honest to what they signaled they'd say.</p>
+
+    <h3>Detach</h3>
+    <p>Cleans up the instance at session end. For runtimes that bill per session-hour, this matters operationally. For ephemeral runtimes, it's a no-op.</p>
+
+    <p>The capability flags declare what an instance supports: streaming, buzz checks, tool calls, MCP, memory inspection, pause/resume. A session that needs a feature an instance doesn't support either degrades gracefully or refuses to cast that runtime in that role. A human seat, for instance, declares only <code>streaming</code> — it can't answer a programmatic buzz check, so poll-mode sessions surface a "buzz in" button in the UI for the human instead.</p>
+
+
+    <h2>The host's tool surface</h2>
+
+    <p>The Host API is the surface a persona's agent can call into. It's organized into four groups of tools.</p>
+
+    <p><strong>Turn signaling</strong> is how a persona influences when it speaks. <code>buzzer.press</code> takes an intensity score and a one-sentence intent — it's the response to a buzz check, and it's also how a persona can request an out-of-turn interjection. <code>buzzer.pass</code> declines a turn explicitly, which the scheduler honors by skipping that seat this round.</p>
+
+    <p><strong>Memory</strong> is read/write/list on a key-value store scoped to the persona's seat in this session. The store lives on Ensemble's side, not inside the runtime. This is deliberate: memory survives runtime swaps, can be inspected from the UI (and edited, eventually), and doesn't depend on whether the underlying runtime has its own memory features. A persona's working memory is a first-class artifact of the session, not an opaque internal detail of whatever's generating its responses.</p>
+
+    <p><strong>Session metadata</strong> gives the persona context about its situation. <code>cast.list</code> returns who else is in this session and what role each plays. <code>round.info</code> returns the current round number, the turn-taking mode, and the persona's cooldown status. These let the agent reason about where it is in the scene without Ensemble baking everything into the system prompt.</p>
+
+    <p><strong>Moderator extensions</strong> are privileged tools only available to a seat with the moderator role. Server-side validation enforces this via claims in the MCP token issued at attach time. The moderator can force a specific seat to speak next, put a seat on cooldown for several rounds, bypass a seat this round entirely, or inject itself into the conversation ahead of the queue. These aren't a separate command channel — they're tools the moderator's agent can choose to call when its judgment says the conversation needs steering.</p>
+
+
+    <h2>Three runtimes that prove the abstraction</h2>
+
+    <p>The architecture is only as honest as the runtimes that implement it. The v1 release ships three.</p>
+
+    <h3>Anthropic — managed-agents</h3>
+    <p>The primary cast runtime. The runtime auto-detects between Anthropic's beta Managed Agents API (which exposes a stateful Session keyed off a server-side Agent definition) and a <code>DirectSdkRuntime</code> fallback that uses regular <code>messages.create</code> with a manual tool-use loop. Both wear the same registry name, so the rest of the system doesn't see the difference. When the Managed Agents beta surface stabilizes, the fallback retires; the SPI doesn't change.</p>
+
+    <h3>Claude Code — pair coding via channels</h3>
+    <p>An externally-managed Claude Code session — one a user is already running in their terminal — can join an Ensemble conversation as a seat at the table. The mechanism is Claude Code's recently-introduced <em>channels</em> feature: a small MCP server (distributed as a Claude Code plugin) is registered in the user's configuration; when they launch Claude with channels enabled, the bridge connects back to Ensemble's main server over WebSocket. Turns are pushed into Claude as <code>notifications/claude/channel</code> events; Claude responds by calling a <code>reply</code> tool the bridge exposes, which streams the response back to Ensemble.</p>
+
+    <p>The result is genuine pair-coding-style collaboration. The user keeps working in Claude. Their Claude joins a session, speaks when it's its turn, calls Host API tools when appropriate, and returns to whatever the user was doing before. Two-way, no per-turn subprocess churn, no fragile state synchronization — the session is held by the runtime, and Ensemble just orchestrates turns.</p>
+
+    <h3>Human — first-player UI</h3>
+    <p>A person at a keyboard. From the SPI's perspective, indistinguishable from any other runtime — the operations have the same shape; only the implementation differs. <em>Attach</em> registers the seat with the UI bridge. <em>Take turn</em> focuses the input field and streams typed characters back to the scheduler as they're entered. The "stream" is literal: other personas in the session see the human's words appearing in real time, identical to how a model-backed persona's response would appear. <em>Buzz check</em> returns a no-buzz response — humans don't respond on demand to a programmatic poll. The UI separately surfaces a "buzz in" button that calls <code>buzzer.press</code> directly on the Host API, which keeps the mechanic available without forcing the symmetry where it doesn't fit.</p>
+
+
+    <h2>Why this design</h2>
+
+    <p>An earlier draft of the runtime contract defined a custom WebSocket protocol with granular wire-level messages: streaming chunks, tool-call requests, memory operations, capability negotiation. It was wrong in a specific way. It assumed Ensemble would reimplement the chat loop, tool dispatch, and memory plumbing that every modern agent runtime already provides. Every adapter would have spent its time translating between Ensemble's primitives and the runtime's native ones — twice the work, twice the surface area to maintain, and worse ergonomics than just using the runtime's own tooling.</p>
+
+    <p>The current design moves the chat loop into the runtime, where it belongs, and pushes everything Ensemble needs from the persona side onto MCP — a protocol every relevant agent runtime already speaks. The SPI is four operations. The Host API is a dozen tools. Each operation does one thing.</p>
+
+    <p>A few specific decisions fell out of this. <strong>Memory lives on the host side</strong>, not inside the runtime. This means memory is portable across runtime swaps, inspectable from the UI, and doesn't depend on any particular runtime having its own memory features. <strong>Streaming is just an async iterable of strings.</strong> No framing, no metadata, no protocol overhead. Every backend natively produces one; the adapter is just a yield loop. <strong>The buzzer is a tool, not a wire-level primitive.</strong> A persona's "buzz-in policy" — a short natural-language description of when this persona wants to speak — becomes guidance for when the agent should call the buzzer tool, rather than a special protocol mechanic. <strong>Moderator powers are tools too.</strong> There's no privileged command channel between the moderator and the scheduler; the moderator's agent just has a few extra tools it can call, gated by the claim baked into its MCP token.</p>
+
+
+    <h2>What this enables</h2>
+
+    <p>The immediate result is that v1 ships with two runtime adapters in tested production state — Anthropic and Human — plus the Claude Code channel runtime as the v1.5 deliverable. The architecture accepts a fourth, fifth, and sixth without rearchitecting. A v2 release can add a Letta adapter, an OpenAI Agents SDK adapter, a local-models-via-Ollama adapter — same scheduler, same UI, same Host API, different runtimes per seat.</p>
+
+    <p>The longer-term result is that persona definitions become portable. The same persona library can power any product that wants to embody those characters. Memory becomes a first-class inspectable artifact. The boundary between system and persona stays clean. And the human is a peer participant in the scene rather than a special case bolted onto a model-only architecture.</p>
+
+    <p>The contract is small because the runtimes are doing the work. The work was already being done; the only thing missing was the right boundary to do it across.</p>
+
+
+    <div class="note">
+      <div class="label">For implementers</div>
+      <p>The full spec — Zod schemas, the <code>PersonaRuntime</code> TypeScript interface, the Host API tool registry, and worked adapter examples — lives in the <a href="runtime-interface.html">runtime spec</a>. The <a href="architecture.html">engineering handoff</a> has the same content in a tighter, bulleted form. The <a href="dimensions.html">dimensions doc</a> describes the eight axes a session varies along and how templates collapse into preset points in that space.</p>
+    </div>
+
+
+    <footer>
+      <span>Ensemble · A pluggable runtime architecture · May 2026</span>
+      <span><a href="https://github.com/marklubin/ensemble">github.com/marklubin/ensemble</a></span>
+    </footer>
+
+  </section>
+
+</main>
+
+</body>
+</html>
