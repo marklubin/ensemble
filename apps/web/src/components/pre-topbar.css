@@ -1,0 +1,62 @@
+.pre-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  backdrop-filter: blur(8px);
+  background: rgba(246, 243, 236, 0.85);
+  border-bottom: 1px solid var(--rule-soft);
+  z-index: 10;
+}
+.pre-topbar-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  font-size: 13px;
+}
+.pre-topbar-brand {
+  font-family: "Iowan Old Style", "Palatino", serif;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  font-size: 15px;
+  text-decoration: none;
+}
+.pre-topbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--rule-soft);
+}
+.pre-topbar-crumbs {
+  color: var(--muted);
+}
+.pre-topbar-crumbs b {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.pre-topbar-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.pre-topbar-btn {
+  font-family: inherit;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: none;
+  display: inline-block;
+  line-height: 1.4;
+}
+.pre-topbar-btn:hover {
+  background: var(--bg-2);
+}

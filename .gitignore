@@ -13,3 +13,8 @@ bun.lock.bak
 .idea
 .vscode
 coverage
+# Playwright artifacts
+test-results
+playwright-report
+blob-report
+playwright/.cache

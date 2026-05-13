@@ -1,4 +1,9 @@
 [test]
-# Playwright specs (e2e/**) are run by Playwright, not bun test.
-# Exclude them so `bun test` only runs L1-L4 (and the L6 live tag).
+# E2E tests live in `e2e/` and are run by Playwright (`bun x playwright test`),
+# not by `bun test`. Without this, `bun test` at the repo root tries to load
+# the Playwright spec files as bun tests and crashes.
 pathIgnorePatterns = ["**/e2e/**", "**/node_modules/**"]
+# Web component tests need a DOM. Preload happy-dom globally for root-level
+# `bun test` runs. (Test files also import the same setup defensively so
+# that running tests from inside `apps/web/` works the same way.)
+preload = ["./apps/web/test/setup-dom.ts"]
