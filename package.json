@@ -10,7 +10,10 @@
     "dev:web": "bun --filter @ensemble/web dev",
     "build": "bun run --filter '*' build",
     "typecheck": "bun run --filter '*' typecheck",
-    "test": "bun test"
+    "test": "bun test && bun --filter @ensemble/web test",
+    "test:server": "bun test",
+    "test:web": "bun --filter @ensemble/web test",
+    "test:e2e": "bun x playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

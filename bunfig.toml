@@ -2,8 +2,11 @@
 # E2E tests live in `e2e/` and are run by Playwright (`bun x playwright test`),
 # not by `bun test`. Without this, `bun test` at the repo root tries to load
 # the Playwright spec files as bun tests and crashes.
-pathIgnorePatterns = ["**/e2e/**", "**/node_modules/**"]
-# Web component tests need a DOM. Preload happy-dom globally for root-level
-# `bun test` runs. (Test files also import the same setup defensively so
-# that running tests from inside `apps/web/` works the same way.)
-preload = ["./apps/web/test/setup-dom.ts"]
+#
+# Web tests (apps/web/**) require happy-dom registered globally before
+# @testing-library/dom evaluates. Registering happy-dom in this root bunfig
+# clobbers Node's native Response/Request and breaks Hono's SSE, which the
+# server tests rely on. We therefore exclude web tests from the root run and
+# run them via `bun --filter @ensemble/web test` (which picks up apps/web's
+# own bunfig that preloads setup-dom).
+pathIgnorePatterns = ["**/e2e/**", "**/node_modules/**", "**/apps/web/**"]
