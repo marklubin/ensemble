@@ -15,7 +15,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { Hono } from "hono";
-import { SessionScheduler } from "../../src/scheduler/index.ts";
+import { EventBus, SessionScheduler } from "../../src/scheduler/index.ts";
 import { UiBridge } from "../../src/ui-bridge/index.ts";
 import { HumanRuntime } from "../../src/runtimes/human/index.ts";
 import type {
@@ -74,13 +74,15 @@ describe("human seat ↔ UiBridge integration (single-turn)", () => {
     };
     const handles = new Map<string, InstanceHandle>([[seat.seat_id, handle]]);
     const runtimes = new Map<string, PersonaRuntime>([[seat.seat_id, runtime]]);
-    const scheduler = new SessionScheduler(
-      "s1",
-      "round-robin",
-      [seat],
+    const bus = new EventBus();
+    const scheduler = new SessionScheduler({
+      sessionId: "s1",
+      mode: "round-robin",
+      seats: [seat],
       handles,
       runtimes,
-    );
+      bus,
+    });
 
     // Pre-determine the turn id the runtime will emit. Since the scheduler
     // calls runtime.takeTurn synchronously, the turn id is `${handle.id}-turn-1`.
@@ -164,13 +166,15 @@ describe("human seat ↔ UiBridge integration (single-turn)", () => {
     };
     const handles = new Map([[seat.seat_id, handle]]);
     const runtimes = new Map<string, PersonaRuntime>([[seat.seat_id, runtime]]);
-    const scheduler = new SessionScheduler(
-      "s2",
-      "round-robin",
-      [seat],
+    const bus = new EventBus();
+    const scheduler = new SessionScheduler({
+      sessionId: "s2",
+      mode: "round-robin",
+      seats: [seat],
       handles,
       runtimes,
-    );
+      bus,
+    });
 
     const turn_id = `${handle.id}-turn-1`;
     const p = scheduler.runRound();

@@ -23,16 +23,74 @@ import {
   runConformanceSuite,
   type ConformanceFactory,
 } from "@ensemble/spi-conformance";
-import { BuzzResponse, type PersonaSpec, type SessionContext } from "@ensemble/shared";
+import {
+  BuzzResponse,
+  type InstanceHandle,
+  type PersonaRuntime,
+  type PersonaSpec,
+  type SessionContext,
+  type TurnEvent,
+} from "@ensemble/shared";
 import { HumanRuntime } from "./index.ts";
 import { UiBridge } from "../../ui-bridge/index.ts";
 
+/**
+ * Factory wraps HumanRuntime in a scripted-input shim. The base
+ * HumanRuntime only yields chunks that arrive via the UiBridge, so for
+ * the conformance suite (which expects a streaming runtime to actually
+ * stream when `takeTurn` is called) we auto-ingest a small scripted
+ * sequence ("ok" + submit) on every take-turn. This mirrors the
+ * real-world flow where a human types characters.
+ *
+ * The turn_id format depends on HumanRuntime's internal counter:
+ *   `${handle.id}-turn-${turnSeq}` where turnSeq starts at 0 and
+ *   increments per takeTurn. The shim mirrors that counter so the
+ *   ingested chunk matches the runtime's active turn_id.
+ */
 const factory: ConformanceFactory = async () => {
   const bridge = new UiBridge();
-  // Default to a generous timeout so the factory-produced runtime can be
-  // exercised in tests that don't immediately drive the bridge.
-  const runtime = new HumanRuntime(bridge, { turnTimeoutMs: 100 });
-  return { runtime, fixtureMode: true };
+  const base = new HumanRuntime(bridge, { turnTimeoutMs: 500 });
+  const sessionsByHandle = new Map<string, string>();
+  const turnCounts = new Map<string, number>();
+
+  const scripted: PersonaRuntime = {
+    name: base.name,
+    defaultCapabilities: base.defaultCapabilities,
+    async attach(persona: PersonaSpec, ctx: SessionContext) {
+      const h = await base.attach(persona, ctx);
+      sessionsByHandle.set(h.id, ctx.session_id);
+      turnCounts.set(h.id, 0);
+      return h;
+    },
+    buzzCheck(handle: InstanceHandle, recentTurns: TurnEvent[]) {
+      return base.buzzCheck(handle, recentTurns);
+    },
+    async detach(handle: InstanceHandle) {
+      sessionsByHandle.delete(handle.id);
+      turnCounts.delete(handle.id);
+      return base.detach(handle);
+    },
+    takeTurn(handle: InstanceHandle, newEvents: TurnEvent[]) {
+      const session_id = sessionsByHandle.get(handle.id);
+      const seq = (turnCounts.get(handle.id) ?? 0) + 1;
+      turnCounts.set(handle.id, seq);
+      const turn_id = `${handle.id}-turn-${seq}`;
+      if (session_id !== undefined) {
+        queueMicrotask(() => {
+          bridge.ingest(
+            { kind: "chunk", seat_id: handle.seat_id, turn_id, text: "ok" },
+            session_id,
+          );
+          bridge.ingest(
+            { kind: "submit", seat_id: handle.seat_id, turn_id },
+            session_id,
+          );
+        });
+      }
+      return base.takeTurn(handle, newEvents);
+    },
+  };
+  return { runtime: scripted, fixtureMode: true };
 };
 
 runConformanceSuite("human", factory);

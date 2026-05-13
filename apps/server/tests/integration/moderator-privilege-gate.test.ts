@@ -61,7 +61,9 @@ async function wireTwoClients(): Promise<Wired> {
   deps.sessions.register(view);
 
   const events: BusEvent[] = [];
-  deps.bus.subscribe((e) => events.push(e));
+  deps.bus.subscribe((e) => {
+    events.push(e);
+  });
 
   // Issue real JWTs; verify them; build per-token servers (mirrors HTTP).
   const castToken = issue(
