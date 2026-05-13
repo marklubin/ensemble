@@ -192,6 +192,36 @@ export function SessionScreen(props: SessionScreenProps = {}) {
     [fetchImpl, sessionId],
   );
 
+  // Stop the session. Maps to POST /sessions/:id/end which sets
+  // scheduler.requestEnd("user") and detaches all runtimes. After the
+  // current in-flight turn finishes, no more inference runs.
+  const onStop = useCallback(async () => {
+    if (!fetchImpl) return;
+    try {
+      const r = await fetchImpl(`/sessions/${sessionId}/end`, {
+        method: "POST",
+      });
+      if (!r.ok) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[session] failed to end ${sessionId}: ${r.status} ${await r
+            .text()
+            .catch(() => "")}`,
+        );
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(`[session] error ending ${sessionId}:`, err);
+    }
+  }, [fetchImpl, sessionId]);
+
+  const onInject = useCallback(
+    (content: string) => {
+      onModeratorAction({ tool: "inject", args: { content } });
+    },
+    [onModeratorAction],
+  );
+
   return (
     <div className="session" data-testid="session-screen">
       <div className="session-topbar">
@@ -206,9 +236,15 @@ export function SessionScreen(props: SessionScreenProps = {}) {
             <b>{meta?.scenario ?? "—"}</b>
           </span>
           <div className="session-topbar-actions">
-            <button type="button">Change scenario</button>
-            <button type="button">Verdict</button>
-            <button type="button" className="primary">End &amp; save</button>
+            <button
+              type="button"
+              className="primary"
+              onClick={onStop}
+              disabled={state.ended}
+              data-testid="session-topbar-end"
+            >
+              {state.ended ? "Ended" : "End & save"}
+            </button>
           </div>
         </div>
       </div>
@@ -329,6 +365,9 @@ export function SessionScreen(props: SessionScreenProps = {}) {
         onCancel={(reason?: string) => bridgeRef.current?.cancel(reason)}
         onBuzzIn={onBuzzIn}
         pollMode={meta?.turn_taking === "poll"}
+        onStop={onStop}
+        onInject={onInject}
+        sessionEnded={state.ended}
       />
 
       {memoryFor && (

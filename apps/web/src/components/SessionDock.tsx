@@ -17,6 +17,12 @@ export interface SessionDockProps {
   /** Buzz-in (poll mode). Only invoked if `pollMode` is true. */
   onBuzzIn?: (intent: string, intensity: number) => void;
   pollMode?: boolean;
+  /** Stop the session — gracefully ends after the in-flight turn. */
+  onStop?: () => void;
+  /** Inject a moderator message into the transcript. */
+  onInject?: (text: string) => void;
+  /** True once the server has reported the session as ended. */
+  sessionEnded?: boolean;
 }
 
 function seatLabel(cast: SeatInfo[], seat_id: string): string {
@@ -34,10 +40,15 @@ export function SessionDock({
   onCancel,
   onBuzzIn,
   pollMode,
+  onStop,
+  onInject,
+  sessionEnded,
 }: SessionDockProps) {
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const [draft, setDraft] = useState("");
   const lastEmittedLen = useRef(0);
+  const [injectText, setInjectText] = useState("");
+  const [showInject, setShowInject] = useState(false);
 
   // Autofocus when the human seat is the active speaker.
   useEffect(() => {
@@ -137,11 +148,72 @@ export function SessionDock({
               </button>
             </>
           ) : (
-            <button type="button" className="session-dock-btn" disabled>
-              ⏸ Pause
-            </button>
+            <>
+              <button
+                type="button"
+                className="session-dock-btn"
+                onClick={() => setShowInject((s) => !s)}
+                disabled={sessionEnded || !onInject}
+                data-testid="session-dock-inject"
+                title="Inject a moderator message"
+              >
+                💬 Inject
+              </button>
+              <button
+                type="button"
+                className="session-dock-btn"
+                onClick={() => {
+                  if (
+                    confirm(
+                      "Stop the session? In-flight turn will finish, then no more inference will run.",
+                    )
+                  ) {
+                    onStop?.();
+                  }
+                }}
+                disabled={sessionEnded || !onStop}
+                data-testid="session-dock-stop"
+              >
+                {sessionEnded ? "⏹ Ended" : "⏹ Stop"}
+              </button>
+            </>
           )}
         </div>
+        {showInject && !isHumanTurn && (
+          <div className="session-inject" data-testid="session-inject">
+            <textarea
+              className="session-mod-input"
+              placeholder="Inject a moderator message — the personas will see it on their next turn..."
+              value={injectText}
+              onChange={(e) => setInjectText(e.target.value)}
+              rows={2}
+              style={{ flex: 1 }}
+              aria-label="Moderator inject"
+            />
+            <button
+              type="button"
+              className="session-dock-btn primary"
+              disabled={!injectText.trim() || sessionEnded}
+              onClick={() => {
+                onInject?.(injectText.trim());
+                setInjectText("");
+                setShowInject(false);
+              }}
+            >
+              Send
+            </button>
+            <button
+              type="button"
+              className="session-dock-btn"
+              onClick={() => {
+                setShowInject(false);
+                setInjectText("");
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
         {showBuzz && (
           <div className="session-buzz" data-testid="session-buzz">
             <input
