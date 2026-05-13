@@ -243,14 +243,20 @@ sessions.get("/:id/events", (c) => {
     let resolveWaiter: (() => void) | null = null;
     let closed = false;
 
-    const unsubscribe = state.bus.subscribe((ev) => {
-      queue.push(ev);
-      if (resolveWaiter) {
-        const r = resolveWaiter;
-        resolveWaiter = null;
-        r();
-      }
-    });
+    // Replay history so late SSE subscribers (browser EventSource
+    // that connected after the scheduler already emitted events) see
+    // the full transcript, not just events after their subscribe.
+    const unsubscribe = state.bus.subscribe(
+      (ev) => {
+        queue.push(ev);
+        if (resolveWaiter) {
+          const r = resolveWaiter;
+          resolveWaiter = null;
+          r();
+        }
+      },
+      { replayHistory: true },
+    );
 
     stream.onAbort(() => {
       closed = true;
@@ -282,8 +288,13 @@ sessions.get("/:id/events", (c) => {
             session_id: sessionId,
             event_type: ev.type,
           });
+          // Emit as an unnamed SSE message (no `event:` line) so the
+          // client's `EventSource.onmessage` catches it. Discrimination
+          // by `type` happens in the reducer. Named SSE events would
+          // require addEventListener(type, ...) on the client which we
+          // intentionally don't do — it would require enumerating every
+          // SseEvent variant in the wiring.
           await stream.writeSSE({
-            event: ev.type,
             data: JSON.stringify(ev),
           });
           if (ev.type === "session.end") {
