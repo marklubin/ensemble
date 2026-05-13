@@ -36,6 +36,12 @@ export interface SessionState {
   handles: Map<string, InstanceHandle>;
   /** Per-seat runtimes (looked up by runtime_type at start time). */
   runtimes: Map<string, PersonaRuntime>;
+  /** Handle IDs that detach() has been called on. */
+  detachedHandles: string[];
+  /** Count of every SseEvent published on this session's bus. */
+  eventCount: number;
+  /** Started-at timestamp set when /start succeeds; null before then. */
+  started_at: string | null;
   status: "created" | "running" | "ended";
   created_at: string;
 }

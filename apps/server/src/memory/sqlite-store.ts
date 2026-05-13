@@ -38,6 +38,7 @@ export class SqliteMemoryStore implements IMemoryStore {
   private readonly db: SqliteDatabase;
   private readonly stmtRead: SqliteStatement;
   private readonly stmtWrite: SqliteStatement;
+  private readonly stmtDelete: SqliteStatement;
   private readonly stmtList: SqliteStatement;
   private readonly stmtDump: SqliteStatement;
 
@@ -61,6 +62,10 @@ export class SqliteMemoryStore implements IMemoryStore {
         VALUES (?, ?, ?, ?)
         ON CONFLICT(session_id, seat_id, key)
         DO UPDATE SET value = excluded.value`,
+    );
+    this.stmtDelete = this.db.prepare(
+      `DELETE FROM memory_entries
+        WHERE session_id = ? AND seat_id = ? AND key = ?`,
     );
     this.stmtList = this.db.prepare(
       `SELECT key FROM memory_entries
@@ -96,6 +101,16 @@ export class SqliteMemoryStore implements IMemoryStore {
 
   write(sessionId: string, seatId: string, key: string, value: unknown): void {
     this.stmtWrite.run(sessionId, seatId, key, JSON.stringify(value ?? null));
+  }
+
+  delete(sessionId: string, seatId: string, key: string): boolean {
+    const result = this.stmtDelete.run(sessionId, seatId, key) as
+      | { changes?: number }
+      | unknown;
+    if (typeof result === "object" && result !== null && "changes" in result) {
+      return (result as { changes: number }).changes > 0;
+    }
+    return true;
   }
 
   list(sessionId: string, seatId: string): string[] {
