@@ -44,6 +44,7 @@
  */
 
 import { z } from "zod";
+import { logger } from "../logging/index.ts";
 
 // ─── Public API ──────────────────────────────────────────────────────
 
@@ -234,6 +235,11 @@ export class ChannelCoordinator {
       if (this.channels.get(key) === registered) {
         this.channels.delete(key);
       }
+      logger.info("channel.close", {
+        session_id: registered.session_id,
+        seat_id: registered.seat_id,
+        pending_count: registered.pending.size,
+      });
       // Reject any pending dispatches that were awaiting replies.
       for (const p of registered.pending.values()) {
         p.fail(new ChannelDisconnectedError());
@@ -421,6 +427,12 @@ export class ChannelCoordinator {
       pending: new Map(),
     };
     this.channels.set(key, channel);
+
+    logger.info("channel.registered", {
+      session_id: msg.session_id,
+      seat_id: msg.seat_id,
+      superseded: Boolean(existing),
+    });
 
     conn.send(
       JSON.stringify({

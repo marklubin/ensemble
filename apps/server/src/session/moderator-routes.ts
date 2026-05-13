@@ -7,6 +7,7 @@ import {
 import { z } from "zod";
 
 import { sessionStore } from "./store.ts";
+import { logger } from "../logging/index.ts";
 
 /**
  * Moderator proxy. Path the web UI's moderator card uses to drive the
@@ -41,6 +42,10 @@ export function createModeratorRoutes(): Hono {
     } catch {
       return c.json({ error: "invalid_json" }, 400);
     }
+    logger.info("moderator.action", {
+      session_id: id,
+      tool,
+    });
 
     switch (tool) {
       case "force_speaker": {

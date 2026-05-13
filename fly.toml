@@ -1,4 +1,4 @@
-app = "ensemble"
+app = "ensemble-app"
 primary_region = "sjc"
 
 [build]
@@ -9,7 +9,7 @@ primary_region = "sjc"
   NODE_ENV = "production"
   MEMORY_BACKEND = "sqlite"
   MEMORY_SQLITE_PATH = "/data/ensemble.sqlite"
-  MCP_PUBLIC_URL = "https://ensemble.fly.dev/mcp"
+  MCP_PUBLIC_URL = "https://ensemble-app.fly.dev/mcp"
   # ANTHROPIC_API_KEY, JWT_SECRET, CLAUDE_CODE_RUNTIME_ENABLED
   # come from `fly secrets set ...`
 

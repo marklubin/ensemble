@@ -129,6 +129,7 @@ async function tryFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T | { __mock: true }> {
+  const method = init?.method ?? "GET";
   try {
     const res = await fetch(path, {
       ...init,
@@ -139,16 +140,46 @@ async function tryFetch<T>(
     });
     if (!res.ok) {
       if (shouldFallback(res.status)) return { __mock: true };
-      throw new Error(`${init?.method ?? "GET"} ${path} → ${res.status}`);
+      // Surface the response body in the console for production
+      // debugging — Fly proxy errors collapse upstream context, and
+      // we want the user's DevTools to show the actual server message.
+      let bodyText = "";
+      try {
+        bodyText = await res.text();
+      } catch {
+        // ignore
+      }
+      // eslint-disable-next-line no-console
+      console.error("[api-client] HTTP error", {
+        url: path,
+        method,
+        status: res.status,
+        body: bodyText,
+      });
+      throw new Error(`${method} ${path} → ${res.status}`);
     }
     return (await res.json()) as T;
   } catch (err) {
     // Network error / fetch threw → fall back to mock
-    if (err instanceof TypeError) return { __mock: true };
+    if (err instanceof TypeError) {
+      // eslint-disable-next-line no-console
+      console.error("[api-client] network error", {
+        url: path,
+        method,
+        err,
+      });
+      return { __mock: true };
+    }
     if (
       err instanceof Error &&
       /failed to fetch|network|connection|ECONNREFUSED/i.test(err.message)
     ) {
+      // eslint-disable-next-line no-console
+      console.error("[api-client] connectivity error", {
+        url: path,
+        method,
+        message: err.message,
+      });
       return { __mock: true };
     }
     throw err;
