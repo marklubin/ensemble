@@ -19,6 +19,9 @@
         "hono": "^4.6.10",
         "zod": "^3.23.8",
       },
+      "devDependencies": {
+        "@ensemble/spi-conformance": "workspace:*",
+      },
     },
     "apps/web": {
       "name": "@ensemble/web",

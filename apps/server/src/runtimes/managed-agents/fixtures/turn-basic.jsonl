@@ -1,0 +1,8 @@
+{"type":"message_start","message":{"id":"msg_fix1","role":"assistant"}}
+{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}
+{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"I think "}}
+{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"the previous "}}
+{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"speaker raised "}}
+{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"a good point."}}
+{"type":"content_block_stop","index":0}
+{"type":"message_stop"}
