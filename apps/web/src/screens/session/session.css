@@ -1,0 +1,614 @@
+/* Session screen — paper aesthetic, ported faithfully from mockups/script/index.html. */
+
+.session {
+  --human: #2e3e6b;
+  --persona-1: #2b5b4e;
+  --persona-2: #843a3a;
+  --persona-3: #4b3a6b;
+  --persona-4: #6a4c1f;
+  font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif;
+  line-height: 1.65;
+}
+
+.session-app {
+  display: grid;
+  grid-template-columns: 1fr min(820px, 100%) 1fr;
+  min-height: 100vh;
+}
+
+.session-gutter {
+  background: linear-gradient(to right, var(--bg) 0%, var(--bg-2) 100%);
+}
+.session-gutter.right {
+  background: linear-gradient(to left, var(--bg) 0%, var(--bg-2) 100%);
+}
+
+/* Top bar */
+.session-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  backdrop-filter: blur(8px);
+  background: rgba(246, 243, 236, 0.85);
+  border-bottom: 1px solid var(--rule-soft);
+  z-index: 10;
+}
+.session-topbar-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  font-size: 13px;
+}
+.session-brand {
+  font-family: "Iowan Old Style", "Palatino", serif;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  font-size: 15px;
+}
+.session-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--rule-soft);
+}
+.session-crumbs { color: var(--muted); }
+.session-crumbs b { color: var(--ink-soft); font-weight: 600; }
+
+.session-template-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(106, 76, 31, 0.08);
+  border: 1px solid rgba(106, 76, 31, 0.25);
+  padding: 3px 9px 3px 11px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.session-template-badge .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.session-topbar-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.session-topbar-actions button {
+  font-family: inherit;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.session-topbar-actions button:hover { background: var(--bg-2); }
+.session-topbar-actions button.primary {
+  background: var(--accent);
+  color: #faf2db;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Page */
+.session-page {
+  padding: 86px 56px 200px;
+  min-width: 0;
+}
+
+.session-cover {
+  text-align: center;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 28px;
+}
+.session-cover-kicker {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.session-cover h1 {
+  font-family: "Iowan Old Style", "Palatino", serif;
+  font-size: 36px;
+  line-height: 1.15;
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.session-cover h1 em { font-style: italic; color: var(--accent); }
+.session-cover .byline { font-size: 14px; color: var(--ink-soft); font-style: italic; }
+.session-cover .meta {
+  margin-top: 18px;
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.session-cover .meta .dot {
+  width: 3px;
+  height: 3px;
+  background: var(--muted-2);
+  border-radius: 50%;
+  align-self: center;
+}
+.session-cast {
+  display: flex;
+  justify-content: center;
+  gap: 36px;
+  flex-wrap: wrap;
+  margin: 4px auto 0;
+  max-width: 700px;
+  padding-top: 14px;
+}
+.session-cast-member { text-align: center; font-size: 13px; cursor: default; }
+.session-cast-name { font-style: italic; font-weight: 600; }
+.session-cast-role {
+  color: var(--muted);
+  font-size: 11px;
+  font-family: -apple-system, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.session-cast-mem-btn {
+  margin-top: 4px;
+  font-family: -apple-system, sans-serif;
+  font-size: 10px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.session-cast-mem-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+/* Act headers */
+.session-act {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 40px 0 18px;
+}
+.session-act::before,
+.session-act::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.session-act h2 {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Stage direction (moderator) */
+.session-stage-direction {
+  font-style: italic;
+  color: var(--moderator);
+  margin: 22px 0;
+  padding: 16px 22px;
+  border-left: 3px solid var(--moderator-rule);
+  background: var(--moderator-bg);
+  border-radius: 0 4px 4px 0;
+}
+.session-sd-head {
+  font-family: -apple-system, sans-serif;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--moderator);
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.session-sd-tools {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.session-sd-tool {
+  font-family: ui-monospace, Menlo, monospace;
+  font-style: normal;
+  font-size: 11px;
+  background: rgba(122, 90, 22, 0.1);
+  border: 1px solid rgba(122, 90, 22, 0.3);
+  color: var(--moderator);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.session-stage-direction p { margin: 0 0 8px; white-space: pre-wrap; }
+.session-stage-direction p:last-child { margin-bottom: 0; }
+
+/* Turn (dialogue) */
+.session-turn {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 28px;
+  margin: 22px 0;
+  align-items: baseline;
+  position: relative;
+}
+.session-speaker {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: right;
+  padding-top: 4px;
+  line-height: 1.5;
+}
+.session-speaker-meta {
+  display: block;
+  font-family: "Iowan Old Style", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  margin-top: 2px;
+}
+.session-speaker.p1 { color: var(--persona-1); }
+.session-speaker.p2 { color: var(--persona-2); }
+.session-speaker.p3 { color: var(--persona-3); }
+.session-speaker.p4 { color: var(--persona-4); }
+.session-speaker.human { color: var(--human); }
+
+.session-lines p { margin: 0 0 10px; white-space: pre-wrap; }
+.session-lines p:last-child { margin-bottom: 0; }
+.session-line-num {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  color: var(--muted-2);
+  position: absolute;
+  right: -42px;
+  top: 4px;
+}
+.session-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 16px;
+  background: var(--ink);
+  margin-left: 1px;
+  vertical-align: -3px;
+  animation: session-blink 1s steps(2) infinite;
+}
+@keyframes session-blink { 50% { opacity: 0; } }
+
+/* Notice (cooldown / bypass / end) */
+.session-notice {
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  margin: 14px 0;
+  text-align: center;
+  padding: 6px 12px;
+  border-top: 1px dashed var(--rule-soft);
+  border-bottom: 1px dashed var(--rule-soft);
+}
+.session-notice.cooldown { color: var(--moderator); }
+.session-notice.bypass { color: var(--persona-2); }
+.session-notice.end {
+  color: var(--ink-soft);
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Dock */
+.session-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, var(--bg) 60%, rgba(246, 243, 236, 0));
+  padding: 28px 24px 18px;
+  z-index: 5;
+}
+.session-dock-inner {
+  max-width: 820px;
+  margin: 0 auto;
+}
+.session-dock-status {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+.session-speaking-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--persona-2);
+  font-weight: 600;
+}
+.session-speaking-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--persona-2);
+  animation: session-pulse 1.4s ease-in-out infinite;
+}
+@keyframes session-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+.session-dock-card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  box-shadow: 0 4px 18px rgba(40, 30, 10, 0.05);
+}
+.session-dock-card textarea {
+  flex: 1;
+  min-height: 38px;
+  max-height: 120px;
+  resize: none;
+  border: 0;
+  outline: 0;
+  font-family: "Iowan Old Style", serif;
+  font-size: 15px;
+  line-height: 1.5;
+  background: transparent;
+  color: var(--ink);
+}
+.session-dock-card textarea::placeholder {
+  color: var(--muted-2);
+  font-style: italic;
+}
+.session-dock-btn {
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  background: var(--bg-2);
+  color: var(--ink-soft);
+}
+.session-dock-btn.primary {
+  background: var(--accent);
+  color: #faf2db;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.session-dock-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.session-dock-queue {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Queue chips */
+.session-queue-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bg-2);
+  border: 1px solid var(--rule-soft);
+  margin: 0 2px;
+  font-variant: all-small-caps;
+  letter-spacing: 0.06em;
+}
+.session-queue-chip.current {
+  background: var(--accent);
+  color: #faf2db;
+  border-color: var(--accent);
+}
+.session-queue-chip.done { opacity: 0.5; text-decoration: line-through; }
+.session-queue-chip.bypassed { opacity: 0.5; text-decoration: line-through; font-style: italic; }
+
+/* Memory panel */
+.session-memory-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 90vw);
+  background: var(--bg);
+  border-left: 1px solid var(--rule);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 24px rgba(40, 30, 10, 0.1);
+}
+.session-memory-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+}
+.session-memory-close {
+  background: transparent;
+  border: 0;
+  font-size: 18px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.session-memory-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 20px;
+}
+.session-memory-empty {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 13px;
+  padding-top: 24px;
+  text-align: center;
+}
+.session-memory-row {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.session-memory-key {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+.session-memory-value {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  background: var(--code-bg);
+  padding: 6px 8px;
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink-soft);
+}
+.session-memory-value textarea {
+  width: 100%;
+  min-height: 80px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 4px 6px;
+  color: var(--ink);
+}
+.session-memory-row-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.session-memory-btn {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.session-memory-btn.danger { color: var(--debate); border-color: var(--debate); }
+
+/* Moderator controls */
+.session-moderator-controls {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--moderator-rule);
+  font-family: -apple-system, sans-serif;
+  font-style: normal;
+  font-size: 11px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.session-mod-btn {
+  background: var(--bg-2);
+  border: 1px solid var(--moderator-rule);
+  color: var(--moderator);
+  padding: 3px 9px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.session-mod-btn:hover { background: var(--moderator-bg); }
+.session-mod-inline {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.session-mod-select,
+.session-mod-input {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 3px;
+}
+.session-mod-inject {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.session-mod-inject textarea {
+  font-family: inherit;
+  font-size: 12px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 6px 8px;
+  background: #fff;
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* Buzz-in */
+.session-buzz {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+.session-buzz-btn {
+  font-family: -apple-system, sans-serif;
+  font-weight: 600;
+  background: var(--debate);
+  color: #faf2db;
+  border: 0;
+  padding: 6px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.session-buzz-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
