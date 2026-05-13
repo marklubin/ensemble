@@ -1,0 +1,224 @@
+/* Casting screen — paper aesthetic */
+
+.cast-page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 96px 40px 80px;
+  font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif;
+}
+
+.cast-header {
+  margin-bottom: 28px;
+}
+.cast-header .kicker {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.cast-header h1 {
+  font-size: 30px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+.cast-header h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+.cast-header .sub {
+  font-size: 14px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.cast-section {
+  margin: 28px 0 14px;
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 6px;
+}
+
+.cast-constraints {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+}
+.cast-constraints ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+.cast-constraints .ok {
+  color: var(--roundtable);
+  font-weight: 600;
+}
+.cast-constraints .miss {
+  color: var(--debate);
+  font-weight: 600;
+}
+
+.cast-seats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cast-seat {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 28px 1.4fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+}
+.cast-seat .idx {
+  font-family: "Iowan Old Style", serif;
+  font-size: 18px;
+  color: var(--muted);
+  font-style: italic;
+}
+.cast-seat select {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--rule);
+  background: var(--bg-2);
+  border-radius: 3px;
+  color: var(--ink);
+  width: 100%;
+}
+.cast-seat .remove {
+  background: transparent;
+  border: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.cast-seat .remove:hover {
+  border-color: var(--debate);
+  color: var(--debate);
+}
+
+.cast-add-seat {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--bg-2);
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+  width: 100%;
+}
+.cast-add-seat:hover { border-color: var(--ink-soft); }
+.cast-add-seat:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cast-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.cast-field label {
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.cast-field textarea,
+.cast-field input[type="number"],
+.cast-field input[type="text"] {
+  font-family: "Iowan Old Style", serif;
+  font-size: 15px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 3px;
+  color: var(--ink);
+  resize: vertical;
+}
+.cast-field textarea { min-height: 90px; }
+
+.cast-length {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+}
+.cast-length label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.cast-length input[type="number"] {
+  width: 60px;
+  font-family: "Iowan Old Style", serif;
+  padding: 4px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.cast-footer {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.cast-submit {
+  background: var(--accent);
+  color: #faf2db;
+  border: 1px solid var(--accent);
+  font-family: -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px 22px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.cast-submit:disabled {
+  background: var(--muted-2);
+  border-color: var(--muted-2);
+  cursor: not-allowed;
+}
+.cast-back {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.cast-errors {
+  color: var(--debate);
+  font-style: italic;
+  font-size: 13px;
+  flex: 1;
+}

@@ -1,0 +1,257 @@
+/* Persona library + editor — paper aesthetic */
+
+.pl-page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 96px 40px 80px;
+  font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif;
+}
+
+.pl-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.pl-header h1 {
+  font-size: 30px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.pl-header h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+.pl-header .sub {
+  flex: 1;
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+.pl-new {
+  background: var(--accent);
+  color: #faf2db;
+  border: 1px solid var(--accent);
+  font-family: -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pl-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.pl-item {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 2fr auto;
+  gap: 14px;
+  align-items: center;
+}
+.pl-item .name {
+  font-family: "Iowan Old Style", serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+.pl-item .role {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pl-item .voice {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.pl-item .actions {
+  display: flex;
+  gap: 6px;
+}
+.pl-item .actions a,
+.pl-item .actions button {
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid var(--rule);
+  background: var(--bg-2);
+  color: var(--ink-soft);
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.pl-item .actions .delete:hover {
+  border-color: var(--debate);
+  color: var(--debate);
+}
+
+.pl-empty {
+  padding: 60px 20px;
+  text-align: center;
+  background: var(--bg-2);
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Editor */
+.pe-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 96px 40px 80px;
+  font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif;
+}
+.pe-header {
+  margin-bottom: 24px;
+}
+.pe-header h1 {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.pe-header h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+.pe-header .sub {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.pe-field {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pe-field label {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pe-field input[type="text"],
+.pe-field textarea,
+.pe-field select {
+  font-family: "Iowan Old Style", serif;
+  font-size: 15px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 3px;
+  color: var(--ink);
+}
+.pe-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.pe-field textarea.system-prompt {
+  min-height: 200px;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  font-size: 13px;
+  background: var(--code-bg);
+}
+.pe-field .hint {
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+.pe-field .error {
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--debate);
+}
+
+.pe-radio-row {
+  display: flex;
+  gap: 14px;
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+}
+.pe-radio-row label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--ink-soft);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pe-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pe-tools label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: var(--bg-2);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.pe-tools label.checked {
+  background: var(--moderator-bg);
+  border-color: var(--moderator-rule);
+}
+
+.pe-footer {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.pe-save {
+  background: var(--accent);
+  color: #faf2db;
+  border: 1px solid var(--accent);
+  font-family: -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px 22px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.pe-save:disabled {
+  background: var(--muted-2);
+  border-color: var(--muted-2);
+  cursor: not-allowed;
+}
+.pe-cancel {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.pe-errors {
+  color: var(--debate);
+  font-style: italic;
+  font-size: 13px;
+  flex: 1;
+}
