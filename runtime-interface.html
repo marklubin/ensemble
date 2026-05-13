@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ensemble — Runtime Interface (SPI + API)</title>
+<style>
+  :root {
+    --bg: #f6f3ec;
+    --bg-2: #efeadf;
+    --ink: #1c1a17;
+    --ink-soft: #3a3631;
+    --muted: #8a8278;
+    --muted-2: #b5ad9e;
+    --rule: #c9bfa9;
+    --rule-soft: #ddd3bb;
+    --accent: #6a4c1f;
+    --moderator: #7a5a16;
+    --moderator-bg: #faf2db;
+    --moderator-rule: #d9b766;
+    --debate: #843a3a;
+    --roundtable: #2b5b4e;
+    --code-bg: #ece6d5;
+    --highlight: #fff5d3;
+    --spi: #2b5b4e;
+    --api: #843a3a;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif; font-size: 16px; line-height: 1.7; }
+
+  .topbar { position: fixed; top: 0; left: 0; right: 0; backdrop-filter: blur(8px); background: rgba(246, 243, 236, 0.85); border-bottom: 1px solid var(--rule-soft); z-index: 10; }
+  .topbar-inner { max-width: 1100px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; font-size: 13px; }
+  .brand { font-family: "Iowan Old Style", "Palatino", serif; font-style: italic; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; font-size: 15px; }
+  .topbar .sep { width: 1px; height: 18px; background: var(--rule-soft); }
+  .topbar .crumbs { color: var(--muted); }
+  .topbar .crumbs b { color: var(--ink-soft); font-weight: 600; }
+  .doc-meta { margin-left: auto; color: var(--muted); font-size: 12px; font-style: italic; }
+  .doc-nav { display: flex; gap: 6px; }
+  .doc-nav a { font-family: -apple-system, sans-serif; font-size: 11px; color: var(--ink-soft); text-decoration: none; border: 1px solid var(--rule); padding: 3px 9px; border-radius: 3px; }
+  .doc-nav a:hover { background: var(--bg-2); }
+  .doc-nav a.active { background: var(--accent); color: #faf2db; border-color: var(--accent); }
+  .doc-nav a.superseded { text-decoration: line-through; opacity: 0.5; }
+
+  .wrap { display: grid; grid-template-columns: 220px 1fr; gap: 56px; max-width: 1100px; margin: 0 auto; padding: 88px 36px 120px; }
+
+  .toc { position: sticky; top: 88px; height: max-content; padding-top: 28px; font-family: -apple-system, sans-serif; font-size: 12px; }
+  .toc-title { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+  .toc a { display: block; padding: 4px 0; color: var(--ink-soft); text-decoration: none; line-height: 1.4; border-left: 2px solid transparent; padding-left: 10px; margin-left: -10px; }
+  .toc a:hover { color: var(--accent); border-color: var(--rule); }
+  .toc a.h2 { padding-left: 22px; color: var(--muted); font-size: 11px; }
+
+  .doc { min-width: 0; }
+  .cover { padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 28px; }
+  .cover .kicker { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .cover h1 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 38px; line-height: 1.1; margin: 0 0 12px; letter-spacing: -0.012em; font-weight: 600; }
+  .cover h1 em { font-style: italic; color: var(--accent); }
+  .cover .byline { font-size: 15px; color: var(--ink-soft); font-style: italic; max-width: 640px; }
+  .cover .stamp { margin-top: 16px; font-family: -apple-system, sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+  .cover .super { margin-top: 14px; background: var(--moderator-bg); border-left: 3px solid var(--moderator-rule); padding: 10px 14px; border-radius: 0 4px 4px 0; font-size: 13px; font-style: italic; color: var(--ink-soft); }
+  .cover .super code { background: rgba(122, 90, 22, 0.12); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+  h2 { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 56px 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+  h2 .num { font-family: ui-monospace, Menlo, monospace; color: var(--muted-2); margin-right: 10px; font-size: 10px; }
+
+  h3 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 24px; font-weight: 600; margin: 36px 0 8px; letter-spacing: -0.005em; line-height: 1.2; }
+  h4 { font-family: "Iowan Old Style", serif; font-size: 17px; font-weight: 600; margin: 26px 0 6px; font-style: italic; color: var(--ink-soft); }
+
+  p { margin: 12px 0; }
+  p strong { font-weight: 600; }
+  p em { font-style: italic; color: var(--ink-soft); }
+  blockquote { margin: 14px 0; padding: 4px 18px; border-left: 3px solid var(--rule); color: var(--ink-soft); font-style: italic; }
+
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(106, 76, 31, 0.3); }
+  a:hover { border-bottom-color: var(--accent); }
+
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 14px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 16px 18px; overflow-x: auto; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; line-height: 1.6; margin: 16px 0; }
+  pre code { background: transparent; padding: 0; font-size: inherit; }
+
+  /* TS-flavored syntax tinting */
+  pre .kw       { color: #843a3a; font-weight: 600; }            /* keyword */
+  pre .ty       { color: #2b5b4e; }                              /* type */
+  pre .str      { color: #6a4c1f; }                              /* string */
+  pre .num      { color: #6a4c1f; }                              /* number */
+  pre .com      { color: var(--muted); font-style: italic; }     /* comment */
+  pre .fn       { color: #4b3a6b; }                              /* function */
+  pre .prop     { color: #1c1a17; }
+  pre .meta     { color: var(--accent); font-weight: 600; }      /* import / from */
+
+  .tbl-wrap { margin: 18px 0; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 10px 14px; text-align: left; background: var(--bg-2); border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; line-height: 1.5; }
+  tr:last-child td { border-bottom: 0; }
+  tr:hover td { background: var(--highlight); }
+  td code { font-size: 12.5px; }
+
+  ul, ol { margin: 12px 0; padding-left: 24px; }
+  li { margin: 6px 0; }
+  ul li::marker { color: var(--muted); }
+
+  .note { background: var(--moderator-bg); border-left: 3px solid var(--moderator-rule); padding: 14px 18px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 14px; }
+  .note .label { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--moderator); margin-bottom: 4px; }
+  .note p { margin: 4px 0; }
+  .note p:last-child { margin-bottom: 0; }
+
+  /* Side-by-side SPI/API */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 22px 0; }
+  .duo .side { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 18px; }
+  .duo .side.spi { border-top: 3px solid var(--spi); }
+  .duo .side.api { border-top: 3px solid var(--api); }
+  .duo .side h4 { font-style: normal; margin: 0 0 6px; font-size: 12px; font-family: -apple-system, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+  .duo .side.spi h4 { color: var(--spi); }
+  .duo .side.api h4 { color: var(--api); }
+  .duo .side .who { font-style: italic; color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .duo .side ul { margin: 0; }
+
+  .arch-diagram { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 22px; margin: 18px 0; }
+  .arch-diagram pre { background: transparent; border: 0; padding: 0; margin: 0; font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); white-space: pre; text-align: center; }
+
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+  .pill.ship { background: rgba(43, 91, 78, 0.12); color: var(--roundtable); border: 1px solid rgba(43, 91, 78, 0.3); }
+  .pill.defer { background: var(--bg-2); color: var(--muted); border: 1px solid var(--rule); }
+  .pill.spi { background: rgba(43, 91, 78, 0.12); color: var(--spi); border: 1px solid rgba(43, 91, 78, 0.3); }
+  .pill.api { background: rgba(132, 58, 58, 0.12); color: var(--api); border: 1px solid rgba(132, 58, 58, 0.3); }
+
+  .questions { counter-reset: question; margin: 16px 0; padding: 0; list-style: none; }
+  .questions li { counter-increment: question; position: relative; padding: 14px 16px 14px 56px; background: #fff; border: 1px solid var(--rule); border-radius: 4px; margin: 10px 0; font-size: 14px; line-height: 1.55; }
+  .questions li::before { content: "Q" counter(question); position: absolute; left: 14px; top: 13px; font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; background: var(--bg); border: 1px solid var(--rule); padding: 2px 7px; border-radius: 3px; }
+
+  footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--rule); font-family: -apple-system, sans-serif; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+
+  @media (max-width: 880px) {
+    .wrap { grid-template-columns: 1fr; gap: 0; padding-left: 24px; padding-right: 24px; }
+    .toc { display: none; }
+    .duo { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">ensemble</span>
+    <span class="sep"></span>
+    <span class="crumbs">Design · <b>Runtime Interface (SPI + API)</b></span>
+    <span class="sep"></span>
+    <div class="doc-nav">
+      <a href="dimensions.html">Dimensions</a>
+      <a href="actor-protocol.html" class="superseded" title="Superseded by runtime-interface">Protocol</a>
+      <a href="runtime-interface.html" class="active">Runtime</a>
+      <a href="mockups/templates/index.html">Mockups</a>
+    </div>
+    <span class="doc-meta">v0.2 · 2026-05-12</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <a href="#premise">Premise</a>
+    <a href="#stack">Stack</a>
+    <a href="#spi">The SPI</a>
+    <a href="#spi-schemas" class="h2">Schemas</a>
+    <a href="#spi-iface" class="h2">Interface</a>
+    <a href="#api">The API (MCP tools)</a>
+    <a href="#api-tools" class="h2">Tool surface</a>
+    <a href="#api-why" class="h2">Why this shape</a>
+    <a href="#examples">Worked examples</a>
+    <a href="#scheduler">Scheduler usage</a>
+    <a href="#scope">v1 scope</a>
+    <a href="#open">Open questions</a>
+  </nav>
+
+
+  <main class="doc">
+
+    <header class="cover">
+      <div class="kicker">Ensemble · Architecture spec v0.2</div>
+      <h1>Two interfaces. One <em>internal</em>, one <em>over MCP</em>.</h1>
+      <p class="byline">The SPI is what runtimes implement so Ensemble can call into them. The API is what Ensemble offers via MCP so runtimes can call back. Both are thin — the runtime does the heavy lifting.</p>
+      <div class="stamp">Draft v0.2 · last updated 2026-05-12</div>
+      <div class="super">
+        <strong>Supersedes <code>actor-protocol.html</code></strong> — the original was at the wrong altitude. It reinvented chat-loop / tool-loop / memory primitives that existing agent runtimes already provide. The layering and mechanics survive; the wire protocol is gone.
+      </div>
+    </header>
+
+
+    <h2 id="premise"><span class="num">§0</span>Premise</h2>
+
+    <p>Ensemble does <strong>not</strong> build chat loops, tool loops, or memory plumbing. It uses existing agent runtimes (Anthropic Managed Agents, Claude Code, Letta, a human at a keyboard, future ones) and acts as the scheduler, transport, and UI on top.</p>
+
+    <div class="duo">
+      <div class="side spi">
+        <h4>SPI <span class="pill spi">Service Provider</span></h4>
+        <div class="who">What a runtime implements. Ensemble calls into this.</div>
+        <ul>
+          <li><code>attach(persona, ctx) → handle</code></li>
+          <li><code>takeTurn(handle, events) → AsyncIterable&lt;string&gt;</code></li>
+          <li><code>buzzCheck(handle, recent) → BuzzResponse</code></li>
+          <li><code>detach(handle)</code></li>
+          <li>Capability flags: <code>streaming</code>, <code>tools</code>, <code>mcp</code>, …</li>
+        </ul>
+      </div>
+      <div class="side api">
+        <h4>API <span class="pill api">Served as MCP</span></h4>
+        <div class="who">What Ensemble offers to whatever's inside the runtime. The persona's agent calls these as tools.</div>
+        <ul>
+          <li><code>buzzer.press</code> / <code>buzzer.pass</code></li>
+          <li><code>memory.{read, write, list}</code></li>
+          <li><code>cast.list</code></li>
+          <li><code>round.info</code></li>
+          <li><code>moderator.*</code> (privileged)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="arch-diagram">
+<pre>                        ┌──────────────────────────────┐
+                        │ Ensemble Session Server      │
+                        │ (TypeScript / Bun / Hono)    │
+                        └──────┬─────────────────┬─────┘
+                               │                 │
+                       SPI ────┤                 ├──── API (served as MCP)
+                  (Ensemble calls)         (runtime/agent calls)
+                               │                 │
+            ┌──────────────────┴───┐         ┌───┴────────────────────┐
+            │ PersonaRuntime impls │         │ Tools                  │
+            │  ManagedAgentsRuntime│         │  buzzer.press / pass   │
+            │  ClaudeCodeRuntime   │         │  memory.{r,w,list}     │
+            │  LettaRuntime        │         │  cast.list             │
+            │  HumanRuntime        │         │  round.info            │
+            └──────────────────────┘         │  moderator.*  (priv.)  │
+                                             └────────────────────────┘</pre>
+    </div>
+
+
+    <h2 id="stack"><span class="num">§1</span>Stack</h2>
+    <ul>
+      <li><strong>Language:</strong> TypeScript</li>
+      <li><strong>Runtime:</strong> Bun</li>
+      <li><strong>Schema / validation:</strong> Zod everywhere</li>
+      <li><strong>HTTP:</strong> Hono on Bun</li>
+      <li><strong>Transport to UI:</strong> SSE for streaming turns; standard REST for everything else</li>
+      <li><strong>Transport to runtimes:</strong> native per-adapter (Anthropic SDK, MCP, Letta SDK, in-process for Human)</li>
+      <li><strong>MCP server:</strong> Ensemble exposes a per-session MCP endpoint serving the API tools</li>
+    </ul>
+
+
+    <h2 id="spi"><span class="num">§2</span>The SPI</h2>
+
+    <p>What a runtime adapter implements. Four required methods, capability set, optional methods gated by capabilities.</p>
+
+
+    <h3 id="spi-schemas">Schemas</h3>
+
+    <pre><code><span class="meta">import</span> { z } <span class="meta">from</span> <span class="str">"zod"</span>;
+
+<span class="kw">export const</span> <span class="ty">PersonaSpec</span> = z.<span class="fn">object</span>({
+  id: z.<span class="fn">string</span>(),
+  name: z.<span class="fn">string</span>(),
+  system_prompt: z.<span class="fn">string</span>(),
+  role: z.<span class="fn">string</span>().<span class="fn">optional</span>(),                    <span class="com">// "Pro" | "Con" | "Host" | custom</span>
+  voice_signature: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+  buzz_in_policy: z.<span class="fn">string</span>().<span class="fn">optional</span>(),          <span class="com">// natural-language meta-rule</span>
+  tools_allowed: z.<span class="fn">array</span>(z.<span class="fn">string</span>()).<span class="fn">default</span>([]),
+  memory_policy: z
+    .<span class="fn">enum</span>([<span class="str">"ephemeral"</span>, <span class="str">"session-scoped"</span>, <span class="str">"persistent"</span>])
+    .<span class="fn">default</span>(<span class="str">"ephemeral"</span>),
+});
+<span class="kw">export type</span> <span class="ty">PersonaSpec</span> = z.<span class="fn">infer</span>&lt;<span class="kw">typeof</span> <span class="ty">PersonaSpec</span>&gt;;
+
+<span class="kw">export const</span> <span class="ty">SessionContext</span> = z.<span class="fn">object</span>({
+  session_id: z.<span class="fn">string</span>(),
+  seat_id: z.<span class="fn">string</span>(),
+  scenario: z.<span class="fn">string</span>(),
+  scenario_format: z.<span class="fn">enum</span>([<span class="str">"motion"</span>, <span class="str">"question"</span>, <span class="str">"scenario"</span>, <span class="str">"document"</span>, <span class="str">"open"</span>]),
+  cast: z.<span class="fn">array</span>(<span class="ty">SeatInfo</span>),
+  ensemble_mcp_url: z.<span class="fn">string</span>().<span class="fn">url</span>(),             <span class="com">// where the runtime can reach API tools</span>
+  ensemble_mcp_token: z.<span class="fn">string</span>(),                  <span class="com">// scoped to (session, seat)</span>
+});
+
+<span class="kw">export const</span> <span class="ty">TurnEvent</span> = z.<span class="fn">discriminatedUnion</span>(<span class="str">"kind"</span>, [
+  z.<span class="fn">object</span>({
+    kind: z.<span class="fn">literal</span>(<span class="str">"turn"</span>),
+    seat_id: z.<span class="fn">string</span>(), speaker: z.<span class="fn">string</span>(), content: z.<span class="fn">string</span>(),
+    round: z.<span class="fn">number</span>().<span class="fn">int</span>(), timestamp: z.<span class="fn">string</span>().<span class="fn">datetime</span>(),
+  }),
+  z.<span class="fn">object</span>({
+    kind: z.<span class="fn">literal</span>(<span class="str">"moderator"</span>),
+    content: z.<span class="fn">string</span>(), round: z.<span class="fn">number</span>().<span class="fn">int</span>(),
+    tool_calls: z.<span class="fn">array</span>(z.<span class="fn">object</span>({ tool: z.<span class="fn">string</span>(), args: z.<span class="fn">unknown</span>(), result: z.<span class="fn">unknown</span>() })).<span class="fn">optional</span>(),
+  }),
+  z.<span class="fn">object</span>({ kind: z.<span class="fn">literal</span>(<span class="str">"scenario_change"</span>), new_prompt: z.<span class="fn">string</span>(), round: z.<span class="fn">number</span>().<span class="fn">int</span>() }),
+  z.<span class="fn">object</span>({ kind: z.<span class="fn">literal</span>(<span class="str">"cooldown"</span>), seat_id: z.<span class="fn">string</span>(), rounds: z.<span class="fn">number</span>().<span class="fn">int</span>(), reason: z.<span class="fn">string</span>() }),
+]);
+
+<span class="kw">export const</span> <span class="ty">BuzzResponse</span> = z.<span class="fn">object</span>({
+  score: z.<span class="fn">number</span>().<span class="fn">min</span>(<span class="num">0</span>).<span class="fn">max</span>(<span class="num">10</span>),
+  intent: z.<span class="fn">string</span>(),
+  can_pass: z.<span class="fn">boolean</span>().<span class="fn">default</span>(<span class="kw">true</span>),
+});
+
+<span class="kw">export const</span> <span class="ty">Capability</span> = z.<span class="fn">enum</span>([
+  <span class="str">"streaming"</span>,            <span class="com">// produces AsyncIterable&lt;string&gt; for turns</span>
+  <span class="str">"buzz_check"</span>,           <span class="com">// can answer buzz polls</span>
+  <span class="str">"tools"</span>,                <span class="com">// honors tools_allowed</span>
+  <span class="str">"mcp"</span>,                  <span class="com">// can connect to Ensemble's MCP server natively</span>
+  <span class="str">"memory_inspection"</span>,    <span class="com">// exposes the persona's memory to Ensemble</span>
+  <span class="str">"pause_resume"</span>,         <span class="com">// can be paused and resumed cheaply</span>
+]);</code></pre>
+
+
+    <h3 id="spi-iface">The interface</h3>
+
+    <pre><code><span class="kw">export interface</span> <span class="ty">InstanceHandle</span> {
+  <span class="kw">readonly</span> id: <span class="ty">string</span>;
+  <span class="kw">readonly</span> seat_id: <span class="ty">string</span>;
+  <span class="kw">readonly</span> capabilities: <span class="ty">ReadonlySet</span>&lt;<span class="ty">Capability</span>&gt;;
+}
+
+<span class="kw">export interface</span> <span class="ty">PersonaRuntime</span> {
+  <span class="kw">readonly</span> name: <span class="ty">string</span>;                            <span class="com">// "managed-agents" | "claude-code" | ...</span>
+  <span class="kw">readonly</span> defaultCapabilities: <span class="ty">ReadonlySet</span>&lt;<span class="ty">Capability</span>&gt;;
+
+  <span class="com">/** Provision an instance for this persona in this session. */</span>
+  <span class="fn">attach</span>(persona: <span class="ty">PersonaSpec</span>, ctx: <span class="ty">SessionContext</span>): <span class="ty">Promise</span>&lt;<span class="ty">InstanceHandle</span>&gt;;
+
+  <span class="com">/**
+   * Take a turn. `newEvents` are events the runtime hasn't seen yet
+   * (the runtime is expected to hold its own conversation state).
+   * Yields response chunks as they stream from the underlying runtime.
+   */</span>
+  <span class="fn">takeTurn</span>(
+    handle: <span class="ty">InstanceHandle</span>,
+    newEvents: <span class="ty">TurnEvent</span>[],
+  ): <span class="ty">AsyncIterable</span>&lt;<span class="ty">string</span>&gt;;
+
+  <span class="com">/**
+   * Poll-mode self-select. Required if the session uses `poll` mode
+   * (capability-gated by `buzz_check`).
+   */</span>
+  <span class="fn">buzzCheck</span>(
+    handle: <span class="ty">InstanceHandle</span>,
+    recentTurns: <span class="ty">TurnEvent</span>[],
+  ): <span class="ty">Promise</span>&lt;<span class="ty">BuzzResponse</span>&gt;;
+
+  <span class="fn">detach</span>(handle: <span class="ty">InstanceHandle</span>): <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;;
+
+  <span class="com">// ── Optional, capability-gated ────────────────────────────────────</span>
+  <span class="fn">inspectMemory</span>?(handle: <span class="ty">InstanceHandle</span>): <span class="ty">Promise</span>&lt;<span class="ty">Record</span>&lt;<span class="ty">string</span>, <span class="kw">unknown</span>&gt;&gt;;
+  <span class="fn">pause</span>?(handle: <span class="ty">InstanceHandle</span>): <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;;
+  <span class="fn">resume</span>?(handle: <span class="ty">InstanceHandle</span>): <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;;
+}</code></pre>
+
+    <p>The scheduler holds one <code>InstanceHandle</code> per seat, calls <code>takeTurn</code> when it's a seat's turn, and <code>buzzCheck</code> in poll mode. <strong>The runtime <em>is</em> the chat loop</strong> — the adapter just bridges between this interface and the runtime's native API.</p>
+
+
+    <h2 id="api"><span class="num">§3</span>The API (MCP tools served by Ensemble)</h2>
+
+    <p>Ensemble runs a per-session MCP server. Each persona instance's runtime is given the MCP URL + a scoped token in <code>SessionContext</code>. The persona's agent can call these tools from inside its own loop.</p>
+
+    <div class="note">
+      <div class="label">The elegant move</div>
+      <p>Buzz-in, memory ops, and pass <strong>aren't wire-protocol primitives any more.</strong> They're tools the agent calls naturally, like it would any other tool. A persona's <code>buzz_in_policy</code> is just guidance for <em>when to call</em> the <code>buzzer.press</code> tool.</p>
+    </div>
+
+
+    <h3 id="api-tools">v1 tool surface</h3>
+
+    <pre><code><span class="meta">import</span> { z } <span class="meta">from</span> <span class="str">"zod"</span>;
+
+<span class="kw">export const</span> tools = {
+  <span class="com">// ─── Turn signaling ──────────────────────────────────────────────</span>
+  <span class="str">"buzzer.press"</span>: {
+    description: <span class="str">"Signal you want to speak next. Used during buzz-check polling, "</span> +
+      <span class="str">"or out-of-turn to request an interjection. Score 0-10."</span>,
+    input: z.<span class="fn">object</span>({
+      intensity: z.<span class="fn">number</span>().<span class="fn">min</span>(<span class="num">0</span>).<span class="fn">max</span>(<span class="num">10</span>),
+      intent: z.<span class="fn">string</span>().<span class="fn">describe</span>(<span class="str">"one sentence: what you'd contribute"</span>),
+    }),
+  },
+  <span class="str">"buzzer.pass"</span>: {
+    description: <span class="str">"Decline this turn entirely. You're skipped this round."</span>,
+    input: z.<span class="fn">object</span>({ reason: z.<span class="fn">string</span>().<span class="fn">optional</span>() }),
+  },
+
+  <span class="com">// ─── Memory (session-scoped) ─────────────────────────────────────</span>
+  <span class="str">"memory.write"</span>: {
+    description: <span class="str">"Persist a key/value to your session-scoped memory."</span>,
+    input: z.<span class="fn">object</span>({ key: z.<span class="fn">string</span>(), value: z.<span class="fn">unknown</span>() }),
+  },
+  <span class="str">"memory.read"</span>: {
+    description: <span class="str">"Read a key from your session-scoped memory."</span>,
+    input: z.<span class="fn">object</span>({ key: z.<span class="fn">string</span>() }),
+  },
+  <span class="str">"memory.list"</span>: {
+    description: <span class="str">"List keys in your session-scoped memory."</span>,
+    input: z.<span class="fn">object</span>({}),
+  },
+
+  <span class="com">// ─── Session metadata ────────────────────────────────────────────</span>
+  <span class="str">"cast.list"</span>: {
+    description: <span class="str">"List the cast in this session with roles."</span>,
+    input: z.<span class="fn">object</span>({}),
+  },
+  <span class="str">"round.info"</span>: {
+    description: <span class="str">"Get current round metadata: round number, turn-taking mode, your cooldown."</span>,
+    input: z.<span class="fn">object</span>({}),
+  },
+
+  <span class="com">// ─── Moderator-only (privileged) ─────────────────────────────────</span>
+  <span class="str">"moderator.force_speaker"</span>: {
+    description: <span class="str">"(Moderator only) Force a seat to speak next regardless of mode."</span>,
+    input: z.<span class="fn">object</span>({ seat_id: z.<span class="fn">string</span>() }),
+  },
+  <span class="str">"moderator.cooldown"</span>: {
+    description: <span class="str">"(Moderator only) Put a seat on cooldown for N rounds."</span>,
+    input: z.<span class="fn">object</span>({ seat_id: z.<span class="fn">string</span>(), rounds: z.<span class="fn">number</span>().<span class="fn">int</span>().<span class="fn">min</span>(<span class="num">1</span>), reason: z.<span class="fn">string</span>() }),
+  },
+  <span class="str">"moderator.bypass"</span>: {
+    description: <span class="str">"(Moderator only) Skip a seat this round."</span>,
+    input: z.<span class="fn">object</span>({ seat_id: z.<span class="fn">string</span>(), reason: z.<span class="fn">string</span>() }),
+  },
+  <span class="str">"moderator.inject"</span>: {
+    description: <span class="str">"(Moderator only) Speak now, ahead of the queue."</span>,
+    input: z.<span class="fn">object</span>({}),
+  },
+};</code></pre>
+
+    <p>Privileged tools are scoped at token-issuance time — the MCP token for a moderator seat includes the <code>moderator</code> claim. Server-side validation rejects misuse.</p>
+
+
+    <h3 id="api-why">Why this shape</h3>
+    <ul>
+      <li><strong>Native to every MCP-speaking runtime.</strong> Managed Agents, Claude Code, Letta, OpenAI Agents SDK all support remote MCP. The agent in its own loop discovers and calls these tools. No custom routing.</li>
+      <li><strong>The buzzer becomes a real tool.</strong> The persona's system prompt naturally includes: <em>"During buzz-check moments, decide based on your policy and call <code>buzzer.press</code> or <code>buzzer.pass</code>."</em></li>
+      <li><strong>Memory inspection from outside is free.</strong> Ensemble owns the memory store; the MCP server is just a facade. The UI reads the same store directly.</li>
+      <li><strong>Moderator extensions don't need a protocol — they're tools.</strong> <code>moderator.force_speaker</code> is just a tool the moderator persona can call. The mod's system prompt says: <em>"you can force a speaker if the conversation needs steering."</em></li>
+    </ul>
+
+
+    <h2 id="examples"><span class="num">§4</span>Worked examples</h2>
+
+
+    <h3>ManagedAgentsRuntime <span class="pill ship" style="vertical-align: 4px;">v1 primary</span></h3>
+
+    <pre><code><span class="meta">import</span> <span class="ty">Anthropic</span> <span class="meta">from</span> <span class="str">"@anthropic-ai/sdk"</span>;
+<span class="meta">import type</span> { <span class="ty">PersonaRuntime</span>, <span class="ty">InstanceHandle</span>, <span class="ty">PersonaSpec</span>,
+  <span class="ty">SessionContext</span>, <span class="ty">TurnEvent</span>, <span class="ty">BuzzResponse</span> } <span class="meta">from</span> <span class="str">"./spi"</span>;
+
+<span class="kw">export class</span> <span class="ty">ManagedAgentsRuntime</span> <span class="kw">implements</span> <span class="ty">PersonaRuntime</span> {
+  <span class="kw">readonly</span> name = <span class="str">"managed-agents"</span>;
+  <span class="kw">readonly</span> defaultCapabilities = <span class="kw">new</span> <span class="ty">Set</span>([
+    <span class="str">"streaming"</span>, <span class="str">"buzz_check"</span>, <span class="str">"tools"</span>, <span class="str">"mcp"</span>, <span class="str">"pause_resume"</span>,
+  ] <span class="kw">as const</span>);
+
+  <span class="fn">constructor</span>(<span class="kw">private</span> client: <span class="ty">Anthropic</span>, <span class="kw">private</span> modelId: <span class="ty">string</span>) {}
+
+  <span class="kw">async</span> <span class="fn">attach</span>(persona: <span class="ty">PersonaSpec</span>, ctx: <span class="ty">SessionContext</span>): <span class="ty">Promise</span>&lt;<span class="ty">InstanceHandle</span>&gt; {
+    <span class="kw">const</span> agent = <span class="kw">await</span> <span class="kw">this</span>.<span class="fn">ensureAgentDefinition</span>(persona, ctx);
+    <span class="kw">const</span> session = <span class="kw">await</span> <span class="kw">this</span>.client.beta.managedAgents.sessions.<span class="fn">create</span>({
+      agent_id: agent.id,
+      mcp_servers: [{ url: ctx.ensemble_mcp_url, auth_token: ctx.ensemble_mcp_token }],
+      metadata: { ensemble_session: ctx.session_id, seat: ctx.seat_id },
+    });
+    <span class="kw">return</span> {
+      id: session.id, seat_id: ctx.seat_id,
+      capabilities: <span class="kw">this</span>.defaultCapabilities,
+    };
+  }
+
+  <span class="kw">async</span> *<span class="fn">takeTurn</span>(handle: <span class="ty">InstanceHandle</span>, newEvents: <span class="ty">TurnEvent</span>[]): <span class="ty">AsyncIterable</span>&lt;<span class="ty">string</span>&gt; {
+    <span class="kw">const</span> userMessage = <span class="fn">formatEventsAsTurnPrompt</span>(newEvents);
+    <span class="kw">const</span> stream = <span class="kw">this</span>.client.beta.managedAgents.sessions.events.<span class="fn">create</span>({
+      session_id: handle.id,
+      role: <span class="str">"user"</span>, content: userMessage, stream: <span class="kw">true</span>,
+    });
+    <span class="kw">for await</span> (<span class="kw">const</span> event <span class="kw">of</span> stream) {
+      <span class="kw">if</span> (event.type === <span class="str">"content_block_delta"</span> &amp;&amp; event.delta.type === <span class="str">"text_delta"</span>) {
+        <span class="kw">yield</span> event.delta.text;
+      }
+    }
+  }
+
+  <span class="kw">async</span> <span class="fn">buzzCheck</span>(handle: <span class="ty">InstanceHandle</span>, recentTurns: <span class="ty">TurnEvent</span>[]): <span class="ty">Promise</span>&lt;<span class="ty">BuzzResponse</span>&gt; {
+    <span class="com">// Send a buzz-check event. The persona's agent will call buzzer.press or</span>
+    <span class="com">// buzzer.pass via MCP. The MCP handler captures the call and resolves this.</span>
+    <span class="kw">const</span> prompt = <span class="fn">formatBuzzCheckPrompt</span>(recentTurns);
+    <span class="kw">return</span> <span class="kw">await</span> <span class="kw">this</span>.<span class="fn">runAndCaptureBuzz</span>(handle.id, prompt);
+  }
+
+  <span class="kw">async</span> <span class="fn">detach</span>(handle: <span class="ty">InstanceHandle</span>): <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt; {
+    <span class="kw">await</span> <span class="kw">this</span>.client.beta.managedAgents.sessions.<span class="fn">archive</span>({ session_id: handle.id });
+  }
+}</code></pre>
+
+
+    <h3>HumanRuntime <span class="pill ship" style="vertical-align: 4px;">v1</span></h3>
+
+    <pre><code><span class="kw">export class</span> <span class="ty">HumanRuntime</span> <span class="kw">implements</span> <span class="ty">PersonaRuntime</span> {
+  <span class="kw">readonly</span> name = <span class="str">"human"</span>;
+  <span class="kw">readonly</span> defaultCapabilities = <span class="kw">new</span> <span class="ty">Set</span>([<span class="str">"streaming"</span>] <span class="kw">as const</span>);
+  <span class="com">// No `buzz_check` — a human in poll mode is handled by the UI showing</span>
+  <span class="com">// a "buzz in?" button rather than the protocol.</span>
+
+  <span class="fn">constructor</span>(<span class="kw">private</span> uiBridge: <span class="ty">UiBridge</span>) {}
+
+  <span class="kw">async</span> <span class="fn">attach</span>(persona: <span class="ty">PersonaSpec</span>, ctx: <span class="ty">SessionContext</span>): <span class="ty">Promise</span>&lt;<span class="ty">InstanceHandle</span>&gt; {
+    <span class="kw">return</span> { id: <span class="fn">crypto</span>.<span class="fn">randomUUID</span>(), seat_id: ctx.seat_id, capabilities: <span class="kw">this</span>.defaultCapabilities };
+  }
+
+  <span class="kw">async</span> *<span class="fn">takeTurn</span>(handle: <span class="ty">InstanceHandle</span>, _events: <span class="ty">TurnEvent</span>[]): <span class="ty">AsyncIterable</span>&lt;<span class="ty">string</span>&gt; {
+    <span class="com">// Focus the UI textarea for this seat. Stream typed characters as entered.</span>
+    <span class="kw">yield</span>* <span class="kw">this</span>.uiBridge.<span class="fn">streamHumanInput</span>(handle.seat_id);
+  }
+
+  <span class="kw">async</span> <span class="fn">buzzCheck</span>(): <span class="ty">Promise</span>&lt;<span class="ty">BuzzResponse</span>&gt; {
+    <span class="kw">return</span> { score: <span class="num">0</span>, intent: <span class="str">""</span>, can_pass: <span class="kw">true</span> };
+  }
+
+  <span class="kw">async</span> <span class="fn">detach</span>(): <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt; { <span class="com">/* nothing */</span> }
+}</code></pre>
+
+
+    <h3>ClaudeCodeRuntime <span class="pill defer" style="vertical-align: 4px;">post-v1 sketch</span></h3>
+
+    <pre><code><span class="kw">export class</span> <span class="ty">ClaudeCodeRuntime</span> <span class="kw">implements</span> <span class="ty">PersonaRuntime</span> {
+  <span class="kw">readonly</span> name = <span class="str">"claude-code"</span>;
+  <span class="kw">readonly</span> defaultCapabilities = <span class="kw">new</span> <span class="ty">Set</span>([
+    <span class="str">"streaming"</span>, <span class="str">"buzz_check"</span>, <span class="str">"tools"</span>, <span class="str">"mcp"</span>,
+  ] <span class="kw">as const</span>);
+
+  <span class="kw">async</span> <span class="fn">attach</span>(persona: <span class="ty">PersonaSpec</span>, ctx: <span class="ty">SessionContext</span>): <span class="ty">Promise</span>&lt;<span class="ty">InstanceHandle</span>&gt; {
+    <span class="com">// Open a slash-command channel to a Claude Code session. It connects</span>
+    <span class="com">// Ensemble as an MCP server and receives persona + scenario as first prompt.</span>
+    <span class="kw">const</span> handle = <span class="kw">await</span> <span class="kw">this</span>.<span class="fn">openSession</span>(persona, ctx);
+    <span class="kw">return</span> { id: handle, seat_id: ctx.seat_id, capabilities: <span class="kw">this</span>.defaultCapabilities };
+  }
+
+  <span class="kw">async</span> *<span class="fn">takeTurn</span>(handle: <span class="ty">InstanceHandle</span>, newEvents: <span class="ty">TurnEvent</span>[]): <span class="ty">AsyncIterable</span>&lt;<span class="ty">string</span>&gt; {
+    <span class="kw">yield</span>* <span class="kw">this</span>.<span class="fn">streamClaudeOutput</span>(handle.id, <span class="fn">formatEventsAsTurnPrompt</span>(newEvents));
+  }
+  <span class="com">// ...</span>
+}</code></pre>
+
+
+    <h2 id="scheduler"><span class="num">§5</span>How the scheduler uses all this</h2>
+
+    <pre><code><span class="kw">class</span> <span class="ty">SessionScheduler</span> {
+  <span class="fn">constructor</span>(
+    <span class="kw">private</span> session: <span class="ty">Session</span>,                       <span class="com">// cast, scenario, mode</span>
+    <span class="kw">private</span> runtimes: <span class="ty">Map</span>&lt;<span class="ty">string</span>, <span class="ty">PersonaRuntime</span>&gt;,  <span class="com">// seat_id → runtime</span>
+  ) {}
+
+  <span class="kw">async</span> <span class="fn">runRound</span>() {
+    <span class="kw">const</span> order = <span class="kw">this</span>.<span class="fn">pickOrder</span>();   <span class="com">// depends on session.turn_taking_mode</span>
+    <span class="kw">for</span> (<span class="kw">const</span> seat_id <span class="kw">of</span> order) {
+      <span class="kw">const</span> runtime = <span class="kw">this</span>.runtimes.<span class="fn">get</span>(seat_id)!;
+      <span class="kw">const</span> handle = <span class="kw">this</span>.session.<span class="fn">handleFor</span>(seat_id);
+      <span class="kw">const</span> newEvents = <span class="kw">this</span>.session.<span class="fn">unseenEventsFor</span>(seat_id);
+
+      <span class="kw">const</span> stream = runtime.<span class="fn">takeTurn</span>(handle, newEvents);
+      <span class="kw">const</span> fullText = <span class="kw">await</span> <span class="kw">this</span>.<span class="fn">streamToTranscript</span>(seat_id, stream);
+
+      <span class="kw">this</span>.session.<span class="fn">recordTurn</span>(seat_id, fullText);
+    }
+  }
+
+  <span class="kw">private async</span> <span class="fn">pickOrder</span>(): <span class="ty">Promise</span>&lt;<span class="ty">string</span>[]&gt; {
+    <span class="kw">if</span> (<span class="kw">this</span>.session.mode === <span class="str">"poll"</span>) {
+      <span class="com">// Buzz-check every idle, non-cooldown seat in parallel</span>
+      <span class="kw">const</span> polls = [...<span class="kw">this</span>.<span class="fn">idleSeats</span>()].<span class="fn">map</span>(<span class="kw">async</span> (seat) =&gt; {
+        <span class="kw">const</span> runtime = <span class="kw">this</span>.runtimes.<span class="fn">get</span>(seat)!;
+        <span class="kw">if</span> (!runtime.defaultCapabilities.<span class="fn">has</span>(<span class="str">"buzz_check"</span>)) <span class="kw">return null</span>;
+        <span class="kw">const</span> r = <span class="kw">await</span> runtime.<span class="fn">buzzCheck</span>(<span class="kw">this</span>.session.<span class="fn">handleFor</span>(seat), <span class="kw">this</span>.session.<span class="fn">recentTurns</span>(<span class="num">3</span>));
+        <span class="kw">return</span> { seat, ...r };
+      });
+      <span class="kw">const</span> results = (<span class="kw">await</span> <span class="ty">Promise</span>.<span class="fn">all</span>(polls)).<span class="fn">filter</span>(<span class="ty">Boolean</span>);
+      <span class="kw">return</span> [<span class="fn">pickWinner</span>(results)];
+    }
+    <span class="com">// ... round-robin / shuffled / host-driven</span>
+  }
+}</code></pre>
+
+    <p>The scheduler never knows what's behind a runtime. The MCP server runs alongside and handles <code>buzzer.*</code> / <code>memory.*</code> / <code>cast.list</code> / <code>moderator.*</code> calls from inside each runtime's loop.</p>
+
+
+    <h2 id="scope"><span class="num">§6</span>v1 implementation scope</h2>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>SPI (Zod schemas + TS interface)</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>API (MCP tools server)</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td><code>ManagedAgentsRuntime</code> adapter</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td><code>HumanRuntime</code> adapter</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Turn-taking: round-robin, shuffled, host-driven, poll</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Cooldowns (poll mode)</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Session-scoped memory store + MCP <code>memory.*</code> tools</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Moderator privileges (force_speaker / cooldown / bypass / inject)</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Screenplay UI consuming SSE event stream</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td><code>ClaudeCodeRuntime</code>, <code>LettaRuntime</code>, <code>OpenAIChatRuntime</code></td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td>Persistent memory policy (across user-sessions)</td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td><code>inspectMemory</code> capability (UI panel editing persona memory live)</td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td>Interruption / hybrid turn-taking modes</td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td>Cross-runtime sessions exercised end-to-end</td><td><span class="pill defer">Defer</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h2 id="open"><span class="num">§7</span>Open questions</h2>
+    <ol class="questions">
+      <li><strong>MCP token scoping.</strong> Each runtime's token grants access to its seat's tools. Should <code>cast.list</code> return all seats but <code>memory.read</code> be self-scoped only? Probably yes — seat-scoped by default, moderator-scoped tokens broader.</li>
+      <li><strong>Buzz-check via MCP tool vs. dedicated SPI method.</strong> Currently the SPI has <code>buzzCheck</code> as a method, but the persona answers by calling <code>buzzer.press</code>/<code>pass</code> tools. Should we drop <code>buzzCheck</code> from the SPI and just send a "you're being asked to buzz" event + wait for the tool call? <em>Probably yes — folds into the same primitive.</em></li>
+      <li><strong>Cold-start cost.</strong> Managed Agents Sessions provision containers; latency unknown. May want to pre-warm one Session per cast member at session start.</li>
+      <li><strong>Memory namespace.</strong> Scoped by <code>seat_id</code>, <code>persona_id</code>, or both? If the same persona is double-cast, you need seat-level. Probably <code>(persona_id × session_id × seat_id)</code> triple, with "share with persona globally" as a separate write.</li>
+      <li><strong>Hono vs. raw Bun.</strong> Hono is convenient but adds a dep. Bun has a fine native HTTP API. For the MCP server, probably worth Hono for the routing.</li>
+      <li><strong>MCP server library.</strong> Use Anthropic's <code>@modelcontextprotocol/sdk</code>? They're maintaining it; defer to upstream.</li>
+    </ol>
+
+
+    <footer>
+      <span>Ensemble · Runtime Interface (SPI + API) · v0.2</span>
+      <span>Source: <code>~/ensemble/runtime-interface.md</code></span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

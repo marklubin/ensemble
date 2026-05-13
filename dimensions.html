@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ensemble — Session Configuration Space</title>
+<style>
+  :root {
+    --bg: #f6f3ec;
+    --bg-2: #efeadf;
+    --ink: #1c1a17;
+    --ink-soft: #3a3631;
+    --muted: #8a8278;
+    --muted-2: #b5ad9e;
+    --rule: #c9bfa9;
+    --rule-soft: #ddd3bb;
+    --accent: #6a4c1f;
+    --moderator: #7a5a16;
+    --moderator-bg: #faf2db;
+    --moderator-rule: #d9b766;
+    --debate: #843a3a;
+    --debate-bg: #f4eae5;
+    --roundtable: #2b5b4e;
+    --roundtable-bg: #e7efea;
+    --code-bg: #ece6d5;
+    --highlight: #fff5d3;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif; font-size: 16px; line-height: 1.7; }
+
+  /* TOP BAR (consistent with other ensemble screens) */
+  .topbar { position: fixed; top: 0; left: 0; right: 0; backdrop-filter: blur(8px); background: rgba(246, 243, 236, 0.85); border-bottom: 1px solid var(--rule-soft); z-index: 10; }
+  .topbar-inner { max-width: 1100px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; font-size: 13px; }
+  .brand { font-family: "Iowan Old Style", "Palatino", serif; font-style: italic; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; font-size: 15px; }
+  .topbar .sep { width: 1px; height: 18px; background: var(--rule-soft); }
+  .topbar .crumbs { color: var(--muted); }
+  .topbar .crumbs b { color: var(--ink-soft); font-weight: 600; }
+  .doc-meta { margin-left: auto; color: var(--muted); font-size: 12px; font-style: italic; }
+
+  /* LAYOUT */
+  .wrap { display: grid; grid-template-columns: 220px 1fr; gap: 56px; max-width: 1100px; margin: 0 auto; padding: 88px 36px 120px; }
+
+  /* TOC */
+  .toc { position: sticky; top: 88px; height: max-content; padding-top: 28px; font-family: -apple-system, sans-serif; font-size: 12px; }
+  .toc-title { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+  .toc a { display: block; padding: 4px 0; color: var(--ink-soft); text-decoration: none; line-height: 1.4; border-left: 2px solid transparent; padding-left: 10px; margin-left: -10px; }
+  .toc a:hover { color: var(--accent); border-color: var(--rule); }
+  .toc a.h2 { padding-left: 22px; color: var(--muted); font-size: 11px; }
+  .toc a.h2:hover { color: var(--ink-soft); }
+  .toc-num { font-variant-numeric: tabular-nums; color: var(--muted-2); margin-right: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 10px; }
+
+  /* DOC */
+  .doc { min-width: 0; }
+
+  /* COVER */
+  .cover { text-align: left; padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 28px; }
+  .cover .kicker { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .cover h1 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 40px; line-height: 1.1; margin: 0 0 12px; letter-spacing: -0.012em; font-weight: 600; }
+  .cover h1 em { font-style: italic; color: var(--accent); }
+  .cover .byline { font-size: 15px; color: var(--ink-soft); font-style: italic; max-width: 620px; }
+  .cover .stamp { margin-top: 16px; font-family: -apple-system, sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+
+  /* SECTION HEADERS */
+  h2 { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 56px 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+  h2 .num { font-family: ui-monospace, Menlo, monospace; color: var(--muted-2); margin-right: 10px; font-size: 10px; }
+
+  h3 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 24px; font-weight: 600; margin: 36px 0 8px; letter-spacing: -0.005em; line-height: 1.2; }
+  h3 .num { font-family: ui-monospace, Menlo, monospace; color: var(--muted-2); margin-right: 12px; font-size: 13px; vertical-align: 3px; font-weight: 400; }
+  h3 .badge { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: rgba(106, 76, 31, 0.1); border: 1px solid rgba(106, 76, 31, 0.25); padding: 1px 7px; border-radius: 999px; margin-left: 8px; vertical-align: 4px; font-weight: 600; }
+  h3 .badge.defer { color: var(--muted); background: var(--bg-2); border-color: var(--rule); }
+
+  h4 { font-family: "Iowan Old Style", serif; font-size: 17px; font-weight: 600; margin: 26px 0 6px; font-style: italic; color: var(--ink-soft); }
+
+  p { margin: 12px 0; }
+  p strong { font-weight: 600; }
+  p em { font-style: italic; color: var(--ink-soft); }
+
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(106, 76, 31, 0.3); }
+  a:hover { border-bottom-color: var(--accent); }
+
+  /* CODE */
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 14px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 16px 18px; overflow-x: auto; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.55; margin: 16px 0; }
+  pre code { background: transparent; padding: 0; font-size: inherit; }
+  pre .yaml-key { color: var(--accent); font-weight: 600; }
+  pre .yaml-val { color: var(--ink); }
+  pre .yaml-comment { color: var(--muted); font-style: italic; }
+
+  /* TABLES */
+  .tbl-wrap { margin: 18px 0; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 10px 14px; text-align: left; background: var(--bg-2); border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; line-height: 1.5; }
+  tr:last-child td { border-bottom: 0; }
+  tr:hover td { background: var(--highlight); }
+  td code { font-size: 12.5px; }
+  td.axis { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--accent); white-space: nowrap; }
+
+  /* LISTS */
+  ul, ol { margin: 12px 0; padding-left: 24px; }
+  li { margin: 6px 0; }
+  ul li::marker { color: var(--muted); }
+
+  /* CALLOUTS */
+  .note { background: var(--moderator-bg); border-left: 3px solid var(--moderator-rule); padding: 14px 18px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 14px; }
+  .note .label { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--moderator); margin-bottom: 4px; }
+  .note p { margin: 4px 0; }
+  .note p:last-child { margin-bottom: 0; }
+
+  /* PRESET CARDS */
+  .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+  .preset { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 18px 20px; }
+  .preset h4 { font-style: normal; margin: 0 0 10px; font-size: 15px; font-family: -apple-system, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; }
+  .preset.debate h4 { color: var(--debate); }
+  .preset.roundtable h4 { color: var(--roundtable); }
+  .preset pre { margin: 0; font-size: 12px; background: transparent; border: 0; padding: 0; }
+  .preset .yaml-key { font-weight: 600; }
+  .preset.debate .yaml-key { color: var(--debate); }
+  .preset.roundtable .yaml-key { color: var(--roundtable); }
+
+  /* SCOPE TABLE — special styling */
+  .scope-table td.scope-cell { font-weight: 600; }
+  .scope-table .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+  .scope-table .pill.ship { background: rgba(43, 91, 78, 0.12); color: var(--roundtable); border: 1px solid rgba(43, 91, 78, 0.3); }
+  .scope-table .pill.defer { background: var(--bg-2); color: var(--muted); border: 1px solid var(--rule); }
+  .scope-table .pill.partial { background: rgba(217, 164, 65, 0.18); color: var(--moderator); border: 1px solid rgba(217, 164, 65, 0.4); }
+
+  /* OPEN QUESTIONS */
+  .questions { counter-reset: question; margin: 16px 0; padding: 0; list-style: none; }
+  .questions li { counter-increment: question; position: relative; padding: 14px 16px 14px 56px; background: #fff; border: 1px solid var(--rule); border-radius: 4px; margin: 10px 0; font-size: 14px; line-height: 1.55; }
+  .questions li::before { content: "Q" counter(question); position: absolute; left: 14px; top: 13px; font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; background: var(--bg); border: 1px solid var(--rule); padding: 2px 7px; border-radius: 3px; }
+
+  /* FOOTER */
+  footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--rule); font-family: -apple-system, sans-serif; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+
+  @media (max-width: 880px) {
+    .wrap { grid-template-columns: 1fr; gap: 0; padding-left: 24px; padding-right: 24px; }
+    .toc { display: none; }
+    .preset-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">ensemble</span>
+    <span class="sep"></span>
+    <span class="crumbs">Design · <b>Session Configuration Space</b></span>
+    <span class="doc-meta">v0.1 · 2026-05-12</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- TOC -->
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <a href="#framing">Framing</a>
+    <a href="#dimensions">The Dimensions</a>
+    <a href="#d1" class="h2"><span class="toc-num">1</span>Cast</a>
+    <a href="#d2" class="h2"><span class="toc-num">2</span>Turn-taking</a>
+    <a href="#d3" class="h2"><span class="toc-num">3</span>Moderation</a>
+    <a href="#d4" class="h2"><span class="toc-num">4</span>Structure</a>
+    <a href="#d5" class="h2"><span class="toc-num">5</span>Context model</a>
+    <a href="#d6" class="h2"><span class="toc-num">6</span>Conclusion</a>
+    <a href="#d7" class="h2"><span class="toc-num">7</span>Scenario</a>
+    <a href="#d8" class="h2"><span class="toc-num">8</span>Human role</a>
+    <a href="#presets">Templates as presets</a>
+    <a href="#scope">v1 Scope</a>
+    <a href="#mechanics">Interesting mechanics</a>
+    <a href="#open">Open questions</a>
+  </nav>
+
+
+  <!-- DOC -->
+  <main class="doc">
+
+    <header class="cover">
+      <div class="kicker">Ensemble · Design spec</div>
+      <h1>The dimensions of a <em>session</em>.</h1>
+      <p class="byline">Forget templates. Define the axes a scene varies along, and templates become named points in that space.</p>
+      <div class="stamp">Draft v0.1 · last updated 2026-05-12</div>
+    </header>
+
+
+    <h2 id="framing"><span class="num">§0</span>Framing</h2>
+
+    <p>A <strong>session</strong> is the unit. Sessions are configured points in an N-dimensional config space. <strong>Templates are named presets</strong> in that space — they pin specific values on most axes and surface only the few that vary.</p>
+
+    <p>Custom sessions let you move any axis. Templates are scaffolding, not walls.</p>
+
+    <div class="note">
+      <div class="label">Analogy</div>
+      <p>Team Deathmatch and Capture the Flag aren't different games — they're presets of <code>respawn</code>, <code>teams</code>, <code>win_condition</code>, <code>time_limit</code>. Same engine, different points. <em>That</em> is how templates relate to the dimensions below.</p>
+    </div>
+
+
+    <h2 id="dimensions"><span class="num">§1</span>The Dimensions</h2>
+
+
+    <h3 id="d1"><span class="num">1</span>Cast <span class="badge">always required</span></h3>
+    <p>A session is N personas drawn from your library, each in a seat.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sub-axis</th><th>Values</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="axis">personas</td><td>ordered list of <code>persona_id</code> refs</td><td>drawn from the library</td></tr>
+          <tr><td class="axis">role <span style="color:var(--muted);font-family:inherit;">(per seat)</span></td><td><code>none</code> | custom string (<code>Pro</code>, <code>Con</code>, <code>Host</code>, <code>Guest</code>, <code>Defendant</code>, …)</td><td>drives behavior + display</td></tr>
+          <tr><td class="axis">model_override</td><td>provider/model, optional</td><td>otherwise inherits persona's default</td></tr>
+          <tr><td class="axis">human_seat</td><td><code>null</code> | seat index with role</td><td>is the human at the table, and where</td></tr>
+          <tr><td class="axis">min_cast / max_cast</td><td>int, optional</td><td>template constraints (e.g. Debate needs ≥1 Pro and ≥1 Con)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Cast is <em>not</em> part of the template — same template, different cast. The template constrains <em>what kinds of seats exist</em> and which are required.</p>
+
+
+    <h3 id="d2"><span class="num">2</span>Turn-taking <span class="badge">the interesting one</span></h3>
+    <p>How is the next speaker chosen?</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Mode</th><th>Mechanic</th><th>Good for</th></tr></thead>
+        <tbody>
+          <tr><td class="axis">round-robin</td><td>Fixed order, same every round</td><td>Standups</td></tr>
+          <tr><td class="axis">shuffled</td><td>Reshuffled each round</td><td>Roundtable, Debate (default in both baselines)</td></tr>
+          <tr><td class="axis">host-driven</td><td>One designated persona picks who's next</td><td>Interview, panel</td></tr>
+          <tr><td class="axis">user-driven</td><td>You click a persona to call on them</td><td>Director mode</td></tr>
+          <tr><td class="axis">self-select</td><td>After each turn, poll idle personas with current context; each returns an interest score. Highest score speaks next.</td><td>Natural conversation; lets personas opt out of turns they have nothing to add to</td></tr>
+          <tr><td class="axis">interruption</td><td>While a persona is streaming, run parallel monitors on idle personas. Above-threshold intensity cuts in.</td><td>Heated debate, improv</td></tr>
+          <tr><td class="axis">hybrid</td><td><code>shuffled</code> rounds with <code>interruption</code> windows between speakers</td><td>The natural middle ground</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Sub-axes:</strong></p>
+    <ul>
+      <li><code>max_consecutive_turns</code> — can one persona go twice in a row? (default 1)</li>
+      <li><code>talking_stick</code> — can the moderator force a specific speaker out of order?</li>
+      <li><code>interrupt_threshold</code> — 0–10 (only when <code>interruption</code> mode)</li>
+      <li><code>self_select_quiet_bias</code> — boost interest score for personas who haven't spoken in K turns</li>
+    </ul>
+
+
+    <h3 id="d3"><span class="num">3</span>Moderation</h3>
+    <p>The moderator / director / host / judge — whatever you want to call the non-cast participant. Their config is its own little sub-tree.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sub-axis</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td class="axis">present</td><td>bool</td></tr>
+          <tr><td class="axis">role</td><td><code>fact-checker</code> | <code>host</code> | <code>mediator</code> | <code>judge</code> | <code>director</code> | <code>narrator</code> | custom</td></tr>
+          <tr><td class="axis">cadence</td><td><code>every-round</code> | <code>on-demand</code> | <code>start-and-end-only</code> | <code>between-phases</code> | <code>continuous</code></td></tr>
+          <tr><td class="axis">tools_enabled</td><td>list — <code>[web_search, calculator, citations, scoring, …]</code></td></tr>
+          <tr><td class="axis">visible_to_cast</td><td>bool — does the cast see moderator messages in their context? (Director: false. Most others: true.)</td></tr>
+          <tr><td class="axis">llm</td><td>provider / model, independent from any cast member</td></tr>
+          <tr><td class="axis">system_prompt</td><td>editable string, with role defaults</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Role defaults wire up <code>tools_enabled</code> and <code>visible_to_cast</code> sensibly: <code>fact-checker</code> enables web search + visible; <code>director</code> disables tools + invisible.</p>
+
+
+    <h3 id="d4"><span class="num">4</span>Structure / Pacing</h3>
+    <p>How long does a session run, and is it sliced into phases?</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sub-axis</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td class="axis">length</td><td><code>open-ended</code> | <code>n_rounds=N</code> | <code>until_consensus</code> | <code>until_verdict</code> | <code>until_artifact_complete</code></td></tr>
+          <tr><td class="axis">phases</td><td>optional ordered list of <code>{name, turn_taking_override, length}</code> — e.g. Debate: opening / body / cross-ex / closing</td></tr>
+          <tr><td class="axis">per_turn_budget</td><td>optional max_tokens or max_time per turn</td></tr>
+          <tr><td class="axis">auto_run</td><td>bool — auto-advance through rounds vs. manual "Next round" button</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3 id="d5"><span class="num">5</span>Context model</h3>
+    <p>What does each persona see?</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sub-axis</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td class="axis">history_visibility</td><td><code>full</code> (everyone sees everything — current default) | <code>phase-scoped</code> | <code>private-pov</code></td></tr>
+          <tr><td class="axis">documents</td><td>list of attached files; each tagged with visibility (<code>public</code> | persona-subset)</td></tr>
+          <tr><td class="axis">per_persona_scratchpad</td><td>bool — private notes a persona maintains across turns</td></tr>
+          <tr><td class="axis">per_persona_goal</td><td>bool — private hidden objective injected into system prompt (negotiation)</td></tr>
+          <tr><td class="axis">shared_artifact</td><td>optional — a doc the cast collaboratively edits (writers' room)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3 id="d6"><span class="num">6</span>Conclusion</h3>
+    <p>How does the session end, and what's the output artifact?</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sub-axis</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td class="axis">trigger</td><td><code>user-ends</code> | <code>n-rounds-reached</code> | <code>consensus-reached</code> | <code>moderator-decides</code> | <code>goal-met</code></td></tr>
+          <tr><td class="axis">synthesis</td><td><code>none</code> | <code>summary</code> | <code>verdict-with-winner</code> | <code>deal-terms</code> | <code>action-items</code> | <code>score-card</code></td></tr>
+          <tr><td class="axis">synthesizer</td><td><code>moderator</code> | <code>dedicated-judge-persona</code> | <code>user</code></td></tr>
+          <tr><td class="axis">scoring</td><td>bool — only valid when cast has assigned sides</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3 id="d7"><span class="num">7</span>Scenario</h3>
+    <p>The kickoff content.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sub-axis</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td class="axis">prompt</td><td>the kickoff text — the motion / question / situation</td></tr>
+          <tr><td class="axis">format</td><td><code>motion</code> | <code>question</code> | <code>scenario-description</code> | <code>document-discussion</code> | <code>open</code></td></tr>
+          <tr><td class="axis">topic_mutable</td><td>bool — can the user change the scenario mid-session?</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3 id="d8"><span class="num">8</span>Human role</h3>
+    <p>What can the human do during the session?</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sub-axis</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td class="axis">seat</td><td><code>spectator</code> | <code>participant</code> (in a cast seat) | <code>director</code> (controls speaker order, regenerate, branch)</td></tr>
+          <tr><td class="axis">interrupt_enabled</td><td>bool — when participant, can the human cut in mid-round?</td></tr>
+          <tr><td class="axis">director_controls</td><td>subset of <code>[next-speaker, regenerate, branch, topic-change, force-speaker, pause-stream]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><em>Spectator + Director is a valid combination — you watch the cast play without speaking, but you control the camera.</em></p>
+
+
+    <h2 id="presets"><span class="num">§2</span>How templates collapse into this space</h2>
+
+    <div class="preset-grid">
+      <div class="preset debate">
+        <h4>Debate</h4>
+        <pre><code><span class="yaml-key">cast.roles:</span>           required(Pro, Con)
+<span class="yaml-key">cast.min_cast:</span>         2
+<span class="yaml-key">turn_taking.mode:</span>      shuffled
+<span class="yaml-key">moderation.present:</span>    true
+<span class="yaml-key">moderation.role:</span>       judge
+<span class="yaml-key">moderation.cadence:</span>    every-round
+<span class="yaml-key">moderation.tools:</span>      [web_search]
+<span class="yaml-key">structure.phases:</span>      [opening, body, closing]
+<span class="yaml-key">conclusion.synthesis:</span> verdict-with-winner
+<span class="yaml-key">conclusion.scoring:</span>   true
+<span class="yaml-key">scenario.format:</span>       motion
+<span class="yaml-key">human.seat:</span>            spectator | participant</code></pre>
+      </div>
+
+      <div class="preset roundtable">
+        <h4>Roundtable</h4>
+        <pre><code><span class="yaml-key">cast.roles:</span>           none
+<span class="yaml-key">cast.min_cast:</span>         2
+<span class="yaml-key">turn_taking.mode:</span>      shuffled
+<span class="yaml-key">moderation.present:</span>    false
+<span class="yaml-key">structure.length:</span>      open-ended
+<span class="yaml-key">conclusion.synthesis:</span> summary
+<span class="yaml-key">conclusion.scoring:</span>   false
+<span class="yaml-key">scenario.format:</span>       open
+<span class="yaml-key">human.seat:</span>            participant
+<span class="yaml-key">human.interrupt:</span>       true</code></pre>
+      </div>
+    </div>
+
+    <h4>Future templates fall out cleanly</h4>
+    <ul>
+      <li><strong>Interview</strong> — <code>turn_taking: host-driven</code>, <code>cast.roles: Host + Guests</code>, no moderator, <code>synthesis: summary</code>.</li>
+      <li><strong>Writers' room</strong> — <code>turn_taking: self-select</code>, no moderator, <code>shared_artifact: enabled</code>, <code>synthesis: artifact-final</code>.</li>
+      <li><strong>Negotiation</strong> — <code>cast.roles: Side-A, Side-B (+ Mediator?)</code>, <code>per_persona_goal: true</code>, <code>synthesis: deal-terms</code>.</li>
+      <li><strong>Standup</strong> — <code>turn_taking: round-robin</code>, fixed length, <code>per_turn_budget: 30s</code>, no moderator.</li>
+      <li><strong>Mock trial</strong> — <code>cast.roles: Plaintiff, Defendant, Judge, Jury+</code>, structured phases, scoring.</li>
+    </ul>
+
+
+    <h2 id="scope"><span class="num">§3</span>Recommended v1 scope</h2>
+
+    <div class="tbl-wrap">
+      <table class="scope-table">
+        <thead><tr><th>Dimension / sub-axis</th><th>v1 status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="scope-cell">Cast — personas + roles + human seat</td><td><span class="pill ship">Ship</span></td><td>Core. Always exposed.</td></tr>
+          <tr><td class="scope-cell">Moderation — present / role / cadence</td><td><span class="pill ship">Ship</span></td><td>Role list constrained to: fact-checker, host, judge, none.</td></tr>
+          <tr><td class="scope-cell">Turn-taking</td><td><span class="pill partial">Partial</span></td><td>Ship <code>shuffled</code> + <code>self-select</code> only. Others deferred.</td></tr>
+          <tr><td class="scope-cell">Scenario prompt + format</td><td><span class="pill ship">Ship</span></td><td></td></tr>
+          <tr><td class="scope-cell">Length — open / n-rounds</td><td><span class="pill ship">Ship</span></td><td></td></tr>
+          <tr><td class="scope-cell">Conclusion synthesis</td><td><span class="pill partial">Partial</span></td><td>Just none / summary / verdict to start.</td></tr>
+          <tr><td class="scope-cell">Human seat + interrupt toggle</td><td><span class="pill ship">Ship</span></td><td></td></tr>
+          <tr><td class="scope-cell">Phases</td><td><span class="pill defer">Defer</span></td><td>Default: none. N-rounds is enough for v1 Debate.</td></tr>
+          <tr><td class="scope-cell">Per-persona scratchpad / private goals</td><td><span class="pill defer">Defer</span></td><td>Default: off. Negotiation template waits.</td></tr>
+          <tr><td class="scope-cell">History visibility variants</td><td><span class="pill defer">Defer</span></td><td>Assume <code>full</code>.</td></tr>
+          <tr><td class="scope-cell"><code>interruption</code> and <code>hybrid</code> modes</td><td><span class="pill defer">Defer</span></td><td>Ship once <code>self-select</code> is stable.</td></tr>
+          <tr><td class="scope-cell">Shared artifact</td><td><span class="pill defer">Defer</span></td><td>Writers'-room template waits.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>v0 defaults when a template doesn't pin a value</h4>
+    <ul>
+      <li><code>turn_taking</code>: <code>shuffled</code></li>
+      <li><code>moderation</code>: off</li>
+      <li><code>length</code>: open-ended</li>
+      <li><code>conclusion.synthesis</code>: summary</li>
+      <li><code>human.seat</code>: participant</li>
+      <li><code>history.visibility</code>: full</li>
+    </ul>
+
+
+    <h2 id="mechanics"><span class="num">§4</span>Notes on the interesting turn-taking modes</h2>
+
+    <h3>self-select</h3>
+    <p>Between turns, before choosing the next speaker:</p>
+    <ol>
+      <li>Build a brief <em>what just happened</em> packet — last 1–3 turns of context.</li>
+      <li>For each idle persona, in parallel, prompt: <em>"You're &lt;Name&gt;. Here's what was just said. On a scale of 1–10, how strongly do you want to respond, and in one sentence, what would your contribution be? Return JSON: {score, intent}."</em></li>
+      <li>Sort by score. Apply quiet bias if enabled. Tie-break random.</li>
+      <li>Top scorer speaks. Their <code>intent</code> becomes a hint in their system prompt for the actual turn — keeps them honest to what they signaled.</li>
+    </ol>
+    <div class="note">
+      <div class="label">Cost</div>
+      <p>N extra small LLM calls per turn. Worth it — this is the mechanic that makes the simulation feel <em>alive</em> rather than scripted. Use a cheap fast model for the poll (Haiku 4.5 or similar).</p>
+    </div>
+
+    <h3>interruption</h3>
+    <p>Runs <em>during</em> a streaming turn:</p>
+    <ol>
+      <li>As the active speaker streams, batch every ~3 seconds of streamed text.</li>
+      <li>For each idle persona, in parallel, prompt: <em>"You're &lt;Name&gt;. &lt;Active&gt; is currently saying: '…'. Do you want to interrupt? Score 1–10 + one-sentence reason."</em></li>
+      <li>If any persona scores above <code>interrupt_threshold</code> (default 8):
+        <ul>
+          <li>Cancel the active stream at the next chunk boundary.</li>
+          <li>Log <code>[Interrupted by Name]: &lt;reason&gt;</code>.</li>
+          <li>That persona becomes the next speaker.</li>
+        </ul>
+      </li>
+    </ol>
+    <div class="note">
+      <div class="label">Implementation note</div>
+      <p>Need a way to cancel an in-flight LLM stream cleanly. Both OpenAI and Anthropic SDKs support it. Higher cost than <code>self-select</code> because polls run in parallel <em>during</em> streaming.</p>
+    </div>
+
+
+    <h2 id="open"><span class="num">§5</span>Open questions</h2>
+    <ol class="questions">
+      <li>Does <strong>moderator presence</strong> belong inside Moderation as a <code>present: bool</code>, or is the user really picking from a role list where "none" is one option? (Affects how the config UI looks.)</li>
+      <li>Should <code>interruption</code> be a turn-taking <em>mode</em> or an <em>overlay</em> that stacks on any base mode (e.g. shuffled + interruption windows)?</li>
+      <li>Phases: do we need them in v1 for the Debate template, or is "rounds" sufficient? <em>(My guess: rounds is sufficient; phases are v2.)</em></li>
+      <li>Cast composition: are roles always picked at session start, or can personas swap roles mid-session?</li>
+      <li>Verdict / scorecard synthesis — does it need its own UI surface, or is it just a long final moderator turn?</li>
+    </ol>
+
+
+    <footer>
+      <span>Ensemble · Session Configuration Space · v0.1</span>
+      <span>Source: <code>~/ensemble/dimensions.md</code></span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

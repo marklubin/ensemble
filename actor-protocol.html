@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ensemble — Actor Protocol &amp; Runtime Bindings</title>
+<style>
+  :root {
+    --bg: #f6f3ec;
+    --bg-2: #efeadf;
+    --ink: #1c1a17;
+    --ink-soft: #3a3631;
+    --muted: #8a8278;
+    --muted-2: #b5ad9e;
+    --rule: #c9bfa9;
+    --rule-soft: #ddd3bb;
+    --accent: #6a4c1f;
+    --moderator: #7a5a16;
+    --moderator-bg: #faf2db;
+    --moderator-rule: #d9b766;
+    --debate: #843a3a;
+    --roundtable: #2b5b4e;
+    --code-bg: #ece6d5;
+    --highlight: #fff5d3;
+    --session: #2b5b4e;        /* teal — session/orchestrator */
+    --actor: #843a3a;          /* burgundy — actor messages */
+    --runtime: #4b3a6b;        /* aubergine — runtime adapters */
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif; font-size: 16px; line-height: 1.7; }
+
+  /* TOP BAR */
+  .topbar { position: fixed; top: 0; left: 0; right: 0; backdrop-filter: blur(8px); background: rgba(246, 243, 236, 0.85); border-bottom: 1px solid var(--rule-soft); z-index: 10; }
+  .topbar-inner { max-width: 1100px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; font-size: 13px; }
+  .brand { font-family: "Iowan Old Style", "Palatino", serif; font-style: italic; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; font-size: 15px; }
+  .topbar .sep { width: 1px; height: 18px; background: var(--rule-soft); }
+  .topbar .crumbs { color: var(--muted); }
+  .topbar .crumbs b { color: var(--ink-soft); font-weight: 600; }
+  .doc-meta { margin-left: auto; color: var(--muted); font-size: 12px; font-style: italic; }
+  .doc-nav { margin-left: 16px; display: flex; gap: 6px; }
+  .doc-nav a { font-family: -apple-system, sans-serif; font-size: 11px; color: var(--ink-soft); text-decoration: none; border: 1px solid var(--rule); padding: 3px 9px; border-radius: 3px; }
+  .doc-nav a:hover { background: var(--bg-2); }
+  .doc-nav a.active { background: var(--accent); color: #faf2db; border-color: var(--accent); }
+
+  /* LAYOUT */
+  .wrap { display: grid; grid-template-columns: 220px 1fr; gap: 56px; max-width: 1100px; margin: 0 auto; padding: 88px 36px 120px; }
+
+  /* TOC */
+  .toc { position: sticky; top: 88px; height: max-content; padding-top: 28px; font-family: -apple-system, sans-serif; font-size: 12px; }
+  .toc-title { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+  .toc a { display: block; padding: 4px 0; color: var(--ink-soft); text-decoration: none; line-height: 1.4; border-left: 2px solid transparent; padding-left: 10px; margin-left: -10px; }
+  .toc a:hover { color: var(--accent); border-color: var(--rule); }
+  .toc a.h2 { padding-left: 22px; color: var(--muted); font-size: 11px; }
+  .toc-num { font-variant-numeric: tabular-nums; color: var(--muted-2); margin-right: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 10px; }
+
+  /* DOC */
+  .doc { min-width: 0; }
+  .cover { padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 28px; }
+  .cover .kicker { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .cover h1 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 38px; line-height: 1.1; margin: 0 0 12px; letter-spacing: -0.012em; font-weight: 600; }
+  .cover h1 em { font-style: italic; color: var(--accent); }
+  .cover .byline { font-size: 15px; color: var(--ink-soft); font-style: italic; max-width: 640px; }
+  .cover .stamp { margin-top: 16px; font-family: -apple-system, sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+
+  h2 { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 56px 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+  h2 .num { font-family: ui-monospace, Menlo, monospace; color: var(--muted-2); margin-right: 10px; font-size: 10px; }
+
+  h3 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 24px; font-weight: 600; margin: 36px 0 8px; letter-spacing: -0.005em; line-height: 1.2; }
+  h3 .badge { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: rgba(106, 76, 31, 0.1); border: 1px solid rgba(106, 76, 31, 0.25); padding: 1px 7px; border-radius: 999px; margin-left: 8px; vertical-align: 4px; font-weight: 600; }
+
+  h4 { font-family: "Iowan Old Style", serif; font-size: 17px; font-weight: 600; margin: 26px 0 6px; font-style: italic; color: var(--ink-soft); }
+
+  p { margin: 12px 0; }
+  p strong { font-weight: 600; }
+  p em { font-style: italic; color: var(--ink-soft); }
+  blockquote { margin: 14px 0; padding: 4px 18px; border-left: 3px solid var(--rule); color: var(--ink-soft); font-style: italic; }
+
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(106, 76, 31, 0.3); }
+  a:hover { border-bottom-color: var(--accent); }
+
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 14px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 16px 18px; overflow-x: auto; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; line-height: 1.6; margin: 16px 0; }
+  pre code { background: transparent; padding: 0; font-size: inherit; }
+  pre .c-session { color: var(--session); font-weight: 600; }
+  pre .c-actor   { color: var(--actor); font-weight: 600; }
+  pre .c-comment { color: var(--muted); font-style: italic; }
+
+  /* TABLES */
+  .tbl-wrap { margin: 18px 0; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 10px 14px; text-align: left; background: var(--bg-2); border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; line-height: 1.5; }
+  tr:last-child td { border-bottom: 0; }
+  tr:hover td { background: var(--highlight); }
+  td code { font-size: 12.5px; }
+  td.msg-name { font-family: ui-monospace, Menlo, monospace; font-size: 12px; white-space: nowrap; }
+  td.msg-name.s2a { color: var(--session); }
+  td.msg-name.a2s { color: var(--actor); }
+  td.msg-name.mod { color: var(--moderator); }
+
+  ul, ol { margin: 12px 0; padding-left: 24px; }
+  li { margin: 6px 0; }
+  ul li::marker { color: var(--muted); }
+
+  /* CALLOUTS */
+  .note { background: var(--moderator-bg); border-left: 3px solid var(--moderator-rule); padding: 14px 18px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 14px; }
+  .note .label { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--moderator); margin-bottom: 4px; }
+  .note p { margin: 4px 0; }
+  .note p:last-child { margin-bottom: 0; }
+
+  /* LAYER CARDS */
+  .layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 22px 0 8px; }
+  .layer { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 18px; position: relative; }
+  .layer .role { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+  .layer.persona .role { color: var(--accent); }
+  .layer.actor   .role { color: var(--actor); }
+  .layer.runtime .role { color: var(--runtime); }
+  .layer h4 { font-style: normal; margin: 0 0 10px; font-size: 18px; color: var(--ink); font-family: "Iowan Old Style", serif; font-weight: 600; }
+  .layer p { font-size: 13.5px; margin: 8px 0; color: var(--ink-soft); }
+  .layer .lifecycle { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule-soft); font-family: -apple-system, sans-serif; font-size: 11px; color: var(--muted); }
+  .layer .lifecycle b { color: var(--ink); font-weight: 600; }
+
+  /* TOPOLOGY DIAGRAM */
+  .topology { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 22px; margin: 18px 0; text-align: center; }
+  .topology pre { background: transparent; border: 0; padding: 0; margin: 0; font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); white-space: pre; display: inline-block; text-align: left; }
+
+  /* SCOPE PILLS */
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+  .pill.ship { background: rgba(43, 91, 78, 0.12); color: var(--roundtable); border: 1px solid rgba(43, 91, 78, 0.3); }
+  .pill.defer { background: var(--bg-2); color: var(--muted); border: 1px solid var(--rule); }
+
+  /* OPEN QUESTIONS */
+  .questions { counter-reset: question; margin: 16px 0; padding: 0; list-style: none; }
+  .questions li { counter-increment: question; position: relative; padding: 14px 16px 14px 56px; background: #fff; border: 1px solid var(--rule); border-radius: 4px; margin: 10px 0; font-size: 14px; line-height: 1.55; }
+  .questions li::before { content: "Q" counter(question); position: absolute; left: 14px; top: 13px; font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; background: var(--bg); border: 1px solid var(--rule); padding: 2px 7px; border-radius: 3px; }
+
+  footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--rule); font-family: -apple-system, sans-serif; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+
+  @media (max-width: 880px) {
+    .wrap { grid-template-columns: 1fr; gap: 0; padding-left: 24px; padding-right: 24px; }
+    .toc { display: none; }
+    .layers { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">ensemble</span>
+    <span class="sep"></span>
+    <span class="crumbs">Design · <b>Actor Protocol &amp; Runtime Bindings</b></span>
+    <div class="doc-nav">
+      <a href="dimensions.html">Dimensions</a>
+      <a href="actor-protocol.html" class="active">Protocol</a>
+      <a href="mockups/templates/index.html">Mockups</a>
+    </div>
+    <span class="doc-meta">v0.1 · 2026-05-12</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <a href="#premise">Premise</a>
+    <a href="#layers">Three layers</a>
+    <a href="#protocol">Actor protocol</a>
+    <a href="#proto-s2a" class="h2">Session → Actor</a>
+    <a href="#proto-a2s" class="h2">Actor → Session</a>
+    <a href="#proto-mod" class="h2">Moderator extensions</a>
+    <a href="#adapters">Runtime adapters</a>
+    <a href="#claude" class="h2">Claude as actor</a>
+    <a href="#modes">Turn-taking modes</a>
+    <a href="#buzz" class="h2">Buzz-in policy</a>
+    <a href="#memory">Memory</a>
+    <a href="#tools">Tools</a>
+    <a href="#topology">Topology</a>
+    <a href="#scope">v1 scope</a>
+    <a href="#open">Open questions</a>
+    <a href="#why">Why this split matters</a>
+  </nav>
+
+
+  <main class="doc">
+
+    <header class="cover">
+      <div class="kicker">Ensemble · Architecture spec</div>
+      <h1>A persona is a <em>spec.</em> The runtime is who's at the controller.</h1>
+      <p class="byline">Define the protocol once, plug in any backend — OpenAI, local LLM, a human, a Claude Code session, an arbitrary external agent. The session orchestrator doesn't know who's behind the connection.</p>
+      <div class="stamp">Draft v0.1 · last updated 2026-05-12</div>
+    </header>
+
+
+    <h2 id="premise"><span class="num">§0</span>Premise</h2>
+
+    <p>A persona is a <strong>specification</strong>, not an implementation. The same persona can be played by an OpenAI chat completion, by a local llama.cpp, by a human typing in a textbox, by a Claude Code session, or by an arbitrary external agent we haven't built yet. Ensemble is the <strong>session orchestrator</strong> — it brokers turns between actors over a defined protocol and doesn't care what's behind the connection.</p>
+
+    <blockquote>The image to hold in your head: <em>"Waiting for Claude to join as player one."</em> A casting lobby. Seats fill in as runtimes connect.</blockquote>
+
+
+    <h2 id="layers"><span class="num">§1</span>The three layers</h2>
+
+    <div class="layers">
+      <div class="layer persona">
+        <div class="role">Layer 1</div>
+        <h4>Persona</h4>
+        <p>Declarative spec. Name, system prompt, role hint, voice signature, tools allowed, memory policy, <strong>buzz-in policy</strong>.</p>
+        <p>Lives in your library, portable across sessions.</p>
+        <div class="lifecycle"><b>Lifecycle:</b> persistent. One persona, many sessions.</div>
+      </div>
+      <div class="layer actor">
+        <div class="role">Layer 2</div>
+        <h4>Actor</h4>
+        <p>A persona <em>instantiated for a session</em>. Binds <code>Persona × Runtime × Session × Seat</code>. Has memory scoped to the persona's policy.</p>
+        <div class="lifecycle"><b>Lifecycle:</b> per-session. Created at casting, destroyed at end (memory may persist).</div>
+      </div>
+      <div class="layer runtime">
+        <div class="role">Layer 3</div>
+        <h4>Runtime</h4>
+        <p>The execution backend that produces the actor's responses. OpenAI, Anthropic, local LLM, a human at a keyboard, a Claude Code session, an external agent.</p>
+        <div class="lifecycle"><b>Lifecycle:</b> connected per-actor. May multiplex many actors.</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <div class="label">Critical idea</div>
+      <p><strong>The human is just another runtime.</strong> No special case in the protocol. The <code>HumanRuntime</code> adapter exposes an input box and streams typed characters as <code>actor.chunk</code> events. The session can't tell the difference.</p>
+      <p>Same goes for Claude. A <code>ClaudeCodeRuntime</code> adapter briefs a Claude Code session with the persona spec + context, lets it generate, streams chunks back. From Ensemble's perspective, Claude is just an actor that happens to be backed by Claude.</p>
+    </div>
+
+
+    <h2 id="protocol"><span class="num">§2</span>The actor protocol</h2>
+
+    <p>Wire format: <strong>WebSocket + JSON messages</strong>. One WebSocket per actor connection. Bi-directional, streaming, low ceremony.</p>
+
+    <h4>Why not WebRTC</h4>
+    <p>WebRTC data channels would work, but the value-add (NAT traversal, low-latency media) is irrelevant for text. WebSocket is simpler, debuggable in DevTools, and every LLM SDK speaks it natively. We can add WebRTC later if we want voice personas.</p>
+
+    <h4>Why not raw MCP</h4>
+    <p>MCP has the right <em>vibe</em> — bidirectional, streaming, tool-call semantics. But MCP is structured client→server; the actor protocol is genuinely peer-to-peer. We may converge later. For now: plain WebSocket with our own message shape, stealing MCP's tool-call schema where useful.</p>
+
+    <h4>Connection lifecycle</h4>
+    <pre><code><span class="c-actor">Actor →</span>   <span class="c-session">Session:</span>  actor.hello       { persona_id, runtime_type, runtime_version, capabilities }
+<span class="c-session">Session →</span> <span class="c-actor">Actor:</span>    session.brief     { session_id, seat_id, persona_spec, cast, scenario, history }
+<span class="c-session">Session →</span> <span class="c-actor">Actor:</span>    session.event*    <span class="c-comment">// zero or more, until your turn</span>
+<span class="c-session">Session →</span> <span class="c-actor">Actor:</span>    session.take_turn { turn_id, context_hint? }
+<span class="c-actor">Actor →</span>   <span class="c-session">Session:</span>  actor.chunk*      { turn_id, delta }
+<span class="c-actor">Actor →</span>   <span class="c-session">Session:</span>  actor.finalize    { turn_id, full_text, tools_used }
+<span class="c-session">Session →</span> <span class="c-actor">Actor:</span>    session.event*    <span class="c-comment">// other turns happen</span>
+...
+<span class="c-session">Session →</span> <span class="c-actor">Actor:</span>    session.end       { transcript_url }</code></pre>
+
+    <p><code>actor.hello</code> declares what runtime this is and what capabilities it offers (tool use, memory, streaming, buzz-in). The session can decline an actor that doesn't meet template requirements.</p>
+
+
+    <h3 id="proto-s2a">Session → Actor messages</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Message</th><th>Payload</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td class="msg-name s2a">session.brief</td><td>full session setup pinned to your seat</td><td>once, on join</td></tr>
+          <tr><td class="msg-name s2a">session.event</td><td><code>{ kind: "turn", speaker, content, round, ... }</code></td><td>every time something happens you should see</td></tr>
+          <tr><td class="msg-name s2a">session.take_turn</td><td><code>{ turn_id, context_hint? }</code></td><td>your turn — start streaming</td></tr>
+          <tr><td class="msg-name s2a">session.buzz_check</td><td><code>{ poll_id, recent_turns }</code></td><td>poll mode: do you want to speak?</td></tr>
+          <tr><td class="msg-name s2a">session.cooldown</td><td><code>{ rounds: N, reason }</code></td><td>moderator put you on cooldown</td></tr>
+          <tr><td class="msg-name s2a">session.bypass</td><td><code>{ reason }</code></td><td>moderator skipped you this round</td></tr>
+          <tr><td class="msg-name s2a">session.tool_result</td><td><code>{ call_id, result }</code></td><td>response to your tool call</td></tr>
+          <tr><td class="msg-name s2a">session.memory_synced</td><td><code>{ keys: [...] }</code></td><td>confirmation of memory write</td></tr>
+          <tr><td class="msg-name s2a">session.end</td><td><code>{ transcript_url, ended_by }</code></td><td>session over</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3 id="proto-a2s">Actor → Session messages</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Message</th><th>Payload</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td class="msg-name a2s">actor.hello</td><td><code>{ persona_id, runtime_type, capabilities }</code></td><td>connect</td></tr>
+          <tr><td class="msg-name a2s">actor.chunk</td><td><code>{ turn_id, delta, position }</code></td><td>streaming tokens</td></tr>
+          <tr><td class="msg-name a2s">actor.finalize</td><td><code>{ turn_id, full_text, tools_used }</code></td><td>turn complete</td></tr>
+          <tr><td class="msg-name a2s">actor.buzz_response</td><td><code>{ poll_id, score: 0-10, intent, can_pass: bool }</code></td><td>response to buzz_check</td></tr>
+          <tr><td class="msg-name a2s">actor.tool_call</td><td><code>{ call_id, tool, args }</code></td><td>request tool execution</td></tr>
+          <tr><td class="msg-name a2s">actor.memory_op</td><td><code>{ op: read | write | list, key?, value? }</code></td><td>memory access</td></tr>
+          <tr><td class="msg-name a2s">actor.error</td><td><code>{ kind, message }</code></td><td>something broke</td></tr>
+          <tr><td class="msg-name a2s">actor.disconnect</td><td><code>{ reason }</code></td><td>leaving</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3 id="proto-mod">Moderator extensions <span class="badge">privileged</span></h3>
+    <p>The moderator is also an actor, but it has additional outbound messages. Server-side validated based on seat role + moderation config.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Message</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td class="msg-name mod">mod.force_speaker</td><td><code>{ seat_id }</code> — next turn goes to that seat regardless of mode</td></tr>
+          <tr><td class="msg-name mod">mod.cooldown</td><td><code>{ seat_id, rounds, reason }</code> — put a seat on cooldown</td></tr>
+          <tr><td class="msg-name mod">mod.bypass</td><td><code>{ seat_id, reason }</code> — skip seat this round</td></tr>
+          <tr><td class="msg-name mod">mod.inject</td><td><code>{ turn_id }</code> — moderator speaks now, ahead of queue</td></tr>
+          <tr><td class="msg-name mod">mod.edit_memory</td><td><code>{ seat_id, key, value }</code> — mutate another actor's memory (audited in transcript)</td></tr>
+          <tr><td class="msg-name mod">mod.invoke_tool</td><td><code>{ tool, args }</code> — call a tool visibly to the cast</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h2 id="adapters"><span class="num">§3</span>Runtime adapters</h2>
+
+    <p>A <strong>runtime adapter</strong> translates between the actor protocol and a specific execution backend. Adapters are server-side processes (or threads) that hold a WebSocket to the session and an SDK/connection to the backend.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Adapter</th><th>Backend</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>OpenAIChatAdapter</code></td><td>OpenAI Chat Completions / Responses API</td><td>Standard. Builds messages from <code>brief</code> + accumulating <code>events</code>.</td></tr>
+          <tr><td><code>AnthropicChatAdapter</code></td><td>Anthropic Messages API</td><td>Same shape; system slot for persona prompt.</td></tr>
+          <tr><td><code>LocalLLMAdapter</code></td><td>Ollama / vLLM / llama.cpp (OpenAI-compatible)</td><td>Same as OpenAI adapter, different base URL.</td></tr>
+          <tr><td><code>HumanAdapter</code></td><td>Text box in the Ensemble UI</td><td>On <code>take_turn</code>, focus input. Stream typed characters as <code>chunk</code>. <code>finalize</code> on submit.</td></tr>
+          <tr><td><code>ClaudeCodeAdapter</code></td><td>Claude Code subagent</td><td><em>(stretch — see below)</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3 id="claude">The Claude Code adapter — the killer demo</h3>
+
+    <p>The user opens a Claude Code session, runs <code>/ensemble join &lt;session_url&gt; as &lt;persona_id&gt;</code>, and Claude Code connects as that persona. Each <code>take_turn</code> fires a focused subagent call (or a turn-scoped Claude call) with the persona prompt + session history; the subagent's streaming output becomes <code>chunk</code> events.</p>
+
+    <div class="note">
+      <div class="label">Why this is the killer demo</div>
+      <p><strong>Claude can join any session as any persona without any code changes to Ensemble itself.</strong> The Persona/Actor/Runtime split exists precisely so this works.</p>
+    </div>
+
+    <p>Two implementations to weigh:</p>
+    <ol>
+      <li><strong>Slash command + MCP server.</strong> Ensemble exposes an MCP server. Claude Code adds it. <code>/ensemble join</code> calls a tool that opens the WebSocket. Standardized, but MCP's client→server bias makes bi-directional awkward.</li>
+      <li><strong>Standalone client invoked by Claude Code.</strong> Small Node/Python binary <code>ensemble-actor</code>. Cleaner protocol, requires install.</li>
+    </ol>
+    <p>Probably <strong>(1)</strong> for v1 — MCP is becoming the lingua franca.</p>
+
+    <h4>Future adapters</h4>
+    <ul>
+      <li><code>ExternalAgentAdapter</code> — generic webhook for LangGraph, CrewAI, AutoGen, etc.</li>
+      <li><code>RecordedAdapter</code> — plays back canned responses; testing and demos.</li>
+      <li><code>VoiceAdapter</code> — TTS + STT bridge. Personas you can actually talk to.</li>
+    </ul>
+
+
+    <h2 id="modes"><span class="num">§4</span>Turn-taking modes (v1 scope)</h2>
+
+    <p>You confirmed: ship <strong>four</strong> modes in v1. Interruption and hybrid deferred.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Mode</th><th>Mechanic</th></tr></thead>
+        <tbody>
+          <tr><td><code>round-robin</code></td><td>Fixed order across rounds. Standup-style.</td></tr>
+          <tr><td><code>shuffled</code></td><td>Reshuffled order each round. Default in both baselines.</td></tr>
+          <tr><td><code>host-driven</code></td><td>One designated <code>Host</code> seat picks who speaks next. Implementation: after each turn, the host gets a <code>session.host_pick</code> message; their response routes the next <code>take_turn</code>.</td></tr>
+          <tr><td><code>poll</code></td><td>Self-select with buzz-in. <em>See below.</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3 id="buzz">Poll mode and the buzz-in policy</h3>
+
+    <p><strong>Mechanic:</strong></p>
+    <ol>
+      <li>After each turn, the speaker enters a <strong>cooldown</strong> for <code>cooldown_rounds</code> (default 1).</li>
+      <li>For each idle, non-cooldown seat, the session sends <code>session.buzz_check</code> with the last 1–3 turns.</li>
+      <li>Each actor returns <code>actor.buzz_response</code> with <code>{ score: 0–10, intent, can_pass }</code>.</li>
+      <li>Highest score wins. Quiet-bias optional. Tie-break random.</li>
+      <li>The winner's <code>intent</code> becomes a hint in their subsequent <code>session.take_turn</code>.</li>
+    </ol>
+
+    <div class="note">
+      <div class="label">The meta-cognitive piece</div>
+      <p>Each persona spec includes a <code>buzz_in_policy</code> — a short natural-language description of <em>when this persona wants to speak</em>:</p>
+      <blockquote>"Buzz in when factual claims are being made without evidence, or when someone is conflating routing with retrieval. Stay quiet when the conversation is on strategy or org structure — that's not my area."</blockquote>
+      <p>This policy is injected into the buzz-check prompt so the persona scores itself against its own meta-rules. It's the spec saying <em>"here's what playing me well looks like — and here's how to know when to be quiet."</em></p>
+      <p><code>can_pass: false</code> lets a persona signal <em>"I don't have anything useful here, skip me entirely this round."</em></p>
+    </div>
+
+
+    <h2 id="memory"><span class="num">§5</span>Memory</h2>
+
+    <p>Every actor has a memory store. Scope set by <code>persona.memory_policy</code>:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Policy</th><th>Behavior</th></tr></thead>
+        <tbody>
+          <tr><td><code>ephemeral</code></td><td>Lives during the session, discarded on end.</td></tr>
+          <tr><td><code>session-scoped</code></td><td>Persisted with the session transcript, reloadable if you re-open it.</td></tr>
+          <tr><td><code>persistent</code></td><td>Synced to the persona's global memory across all sessions.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Operations:</strong> <code>read(key) → value</code>, <code>write(key, value)</code>, <code>list() → keys[]</code>. The actor uses <code>actor.memory_op</code>; the session confirms with <code>session.memory_synced</code>. Moderator can mutate any actor's memory with <code>mod.edit_memory</code> (audited in the transcript).</p>
+
+    <p><strong>UI surface:</strong> each actor's row in the session UI gets a memory affordance — a notebook icon that opens an editable key-value panel. Useful for inspection, debugging, scripting scenarios where you want to seed a persona with prior knowledge.</p>
+
+
+    <h2 id="tools"><span class="num">§6</span>Tools</h2>
+
+    <p>Persona spec declares <code>tools_allowed: [...]</code>. The session validates each <code>actor.tool_call</code> against this allowlist.</p>
+
+    <p><strong>v1:</strong> only the moderator (in its <code>fact-checker</code> role) gets <code>web_search</code>. Cast personas have <code>tools_allowed: []</code>.</p>
+
+    <p><strong>Future:</strong> any persona can declare tools. A researcher persona with <code>web_search + arxiv_search</code>; a coder persona with <code>code_execute + read_file</code>; a trader persona with <code>quote_lookup</code>.</p>
+
+    <p>Tool execution is session-mediated. The session receives <code>actor.tool_call</code>, invokes the tool, returns <code>session.tool_result</code>. Slow tools (search) stream interim status via <code>session.event { kind: "tool_status" }</code> so the UI can render the "🔍 Searching: …" indicator from the baseline.</p>
+
+
+    <h2 id="topology"><span class="num">§7</span>Connection topology</h2>
+
+    <div class="topology">
+<pre>                          ┌──────────────────────┐
+                          │ Ensemble Session     │
+                          │ Orchestrator (server)│
+                          └──────┬───────────────┘
+                                 │ WebSocket per actor
+            ┌────────────┬───────┼────────┬──────────────┬─────────────────┐
+            │            │       │        │              │                 │
+       ┌────▼────┐  ┌────▼───┐  ┌▼────┐  ┌▼──────┐  ┌────▼────┐    ┌──────▼──────┐
+       │ OpenAI  │  │Anthropic│  │Human │  │Claude │  │ Local   │    │ External    │
+       │ Adapter │  │ Adapter │  │      │  │ Code  │  │ LLM     │    │ Agent       │
+       └────┬────┘  └────┬───┘  └──────┘  └───┬───┘  └────┬────┘    └──────┬──────┘
+            │            │                    │           │                 │
+       OpenAI API    Anthropic API        Claude Code    Ollama         arbitrary
+                                          (MCP)         /vLLM           webhook</pre>
+    </div>
+
+    <p>The browser UI is itself a WebSocket client — subscribed to the same event stream as actors (read-only, plus moderator commands if the user is in a director seat).</p>
+
+
+    <h2 id="scope"><span class="num">§8</span>v1 implementation scope</h2>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Persona spec (markdown, same as baseline)</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Actor protocol over WebSocket</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Adapters: OpenAI, Anthropic, LocalLLM, Human</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Turn-taking: round-robin, shuffled, host-driven, poll</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Cooldowns (in poll mode)</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Memory: ephemeral and session-scoped</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Tools: moderator-only <code>web_search</code></td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>Moderator extensions: inject, force_speaker, cooldown, invoke_tool</td><td><span class="pill ship">Ship</span></td></tr>
+          <tr><td>ClaudeCodeAdapter</td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td>ExternalAgentAdapter, webhook runtimes</td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td>Persistent memory policy</td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td>Tools for non-moderator personas</td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td><code>mod.edit_memory</code></td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td>Mid-stream interruption</td><td><span class="pill defer">Defer</span></td></tr>
+          <tr><td>Voice adapter</td><td><span class="pill defer">Defer</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h2 id="open"><span class="num">§9</span>Open questions</h2>
+    <ol class="questions">
+      <li><strong>Server-side vs. client-side LLM adapters.</strong> Server-side (Ensemble holds keys, eats the bill) or client-side (browser holds keys, talks direct to OpenAI)? Probably: server-side default, BYO-key option.</li>
+      <li><strong>WS per actor vs. multiplexed.</strong> One WS per actor is clean. Multiplexing across actors backed by the same provider scales better. v1: one per actor.</li>
+      <li><strong>Buzz-in cost.</strong> N small LLM calls per turn in poll mode. At 5 personas × 30 turns × $0.001 ≈ $0.15 overhead. Flag if painful.</li>
+      <li><strong>Buzz-in fidelity.</strong> Does the buzz score reflect what the persona <em>would</em> say, or just whether they want to say something? Worth testing whether polled <code>intent</code> matches eventual turn.</li>
+      <li><strong>Memory key namespacing.</strong> If a persona is in two sessions simultaneously with <code>session-scoped</code> memory, do they collide? Probably namespace by <code>(persona_id, session_id)</code>.</li>
+      <li><strong>MCP vs. custom protocol convergence.</strong> Worth a real spike before v1 to see how painful pure-MCP would be. If tolerable, we get Claude Code integration for free.</li>
+      <li><strong>"Claude joins as Keith" UX.</strong> A slash command? A new top-level command? An invisible MCP that just receives a brief? — separate from the protocol design.</li>
+    </ol>
+
+
+    <h2 id="why"><span class="num">§10</span>Why this split matters (beyond Ensemble)</h2>
+
+    <p>The Persona / Actor / Runtime split isn't Ensemble-specific. It's a general way to express <em>"a configured cognitive role that can be hosted in any execution substrate."</em> Once you have it:</p>
+    <ul>
+      <li>The same persona library works across products.</li>
+      <li>New runtimes (local models, specialized agents, voice avatars) plug in without rewriting consumers.</li>
+      <li>Memory becomes inspectable and editable — a debugging surface, not just an internal blob.</li>
+      <li>The human and the model are symmetrically treated, which is the right default for HITL workflows.</li>
+    </ul>
+    <p>Treat Ensemble as the first concrete consumer of this abstraction. If the protocol is clean here, it's reusable.</p>
+
+
+    <footer>
+      <span>Ensemble · Actor Protocol &amp; Runtime Bindings · v0.1</span>
+      <span>Source: <code>~/ensemble/actor-protocol.md</code></span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

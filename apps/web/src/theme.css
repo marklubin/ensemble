@@ -1,0 +1,34 @@
+/* Paper aesthetic — design tokens shared from the static mockups.
+   UX agents (Phase 1F + 1G) import this and extend with screen-specific CSS. */
+
+:root {
+  --bg: #f6f3ec;
+  --bg-2: #efeadf;
+  --ink: #1c1a17;
+  --ink-soft: #3a3631;
+  --muted: #8a8278;
+  --muted-2: #b5ad9e;
+  --rule: #c9bfa9;
+  --rule-soft: #ddd3bb;
+  --accent: #6a4c1f;
+  --moderator: #7a5a16;
+  --moderator-bg: #faf2db;
+  --moderator-rule: #d9b766;
+  --debate: #843a3a;
+  --roundtable: #2b5b4e;
+  --code-bg: #ece6d5;
+  --highlight: #fff5d3;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); }

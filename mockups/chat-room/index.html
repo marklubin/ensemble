@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Debate — Chat-room mockup</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --panel: #16181d;
+    --panel-2: #1c1f25;
+    --line: #262932;
+    --line-2: #2f333d;
+    --text: #e6e7eb;
+    --muted: #8a8f99;
+    --muted-2: #6a6f78;
+    --accent: #7aa2f7;
+    --moderator: #d9a441;
+    --moderator-bg: #2a230f;
+    --moderator-line: #5a4717;
+    --human: #b8c0c8;
+    --good: #6ec07a;
+    --warn: #d97757;
+    --persona-1: #7aa2f7; /* blue */
+    --persona-2: #c678dd; /* magenta */
+    --persona-3: #6ec07a; /* green */
+    --persona-4: #d9a441; /* gold */
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; font-size: 14px; line-height: 1.55; }
+  .app { display: grid; grid-template-columns: 240px 1fr 280px; height: 100vh; }
+  .sidebar { background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+  .sidebar-right { background: var(--panel); border-right: 0; border-left: 1px solid var(--line); }
+  .sidebar h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 16px 16px 8px; }
+  .brand { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .brand-name { font-weight: 600; letter-spacing: 0.02em; }
+  .topic-card { margin: 12px 12px 4px; padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 8px; }
+  .topic-label { font-size: 10px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+  .topic-text { font-size: 13px; font-weight: 500; }
+  .meta-row { display: flex; gap: 10px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+  .meta-pill { background: var(--bg); border: 1px solid var(--line); padding: 2px 6px; border-radius: 4px; }
+
+  .personas { padding: 0 8px 12px; overflow-y: auto; }
+  .persona { display: flex; gap: 10px; padding: 8px; border-radius: 6px; cursor: default; align-items: center; }
+  .persona:hover { background: var(--panel-2); }
+  .persona.speaking { background: var(--panel-2); box-shadow: inset 2px 0 0 var(--accent); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; color: #11131a; }
+  .persona-info { min-width: 0; flex: 1; }
+  .persona-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .persona-model { font-size: 10px; color: var(--muted); }
+  .speaking-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+  /* Main column */
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .topic-title { font-weight: 600; font-size: 15px; }
+  .round-pill { background: var(--panel-2); border: 1px solid var(--line-2); padding: 2px 10px; border-radius: 999px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .header-actions { display: flex; gap: 8px; }
+  .btn { background: var(--panel-2); border: 1px solid var(--line-2); color: var(--text); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .btn:hover { background: var(--line); }
+  .btn.primary { background: var(--accent); color: #0e0f12; border-color: var(--accent); font-weight: 600; }
+  .btn.primary:hover { background: #95b6fa; }
+  .btn.danger:hover { border-color: var(--warn); color: var(--warn); }
+
+  .queue-bar { padding: 8px 20px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .queue-label { color: var(--muted-2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .queue-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line-2); font-size: 12px; }
+  .chip-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chip.current { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+  .chip.done { opacity: 0.5; }
+
+  .scroll { flex: 1; overflow-y: auto; padding: 20px 24px 12px; }
+  .messages { max-width: 760px; margin: 0 auto; }
+
+  .msg { margin: 18px 0; position: relative; }
+  .msg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .msg-name { font-weight: 600; font-size: 13px; }
+  .msg-time { font-size: 11px; color: var(--muted-2); }
+  .msg-model-badge { font-size: 10px; color: var(--muted); background: var(--panel-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 4px; }
+  .msg-body { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; position: relative; }
+  .msg-body.streaming { border-color: var(--line-2); }
+  .msg-body p { margin: 0 0 8px; }
+  .msg-body p:last-child { margin-bottom: 0; }
+  .msg-body strong { color: #fff; }
+  .msg-body code { background: var(--bg); padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .msg .actions { position: absolute; top: 6px; right: 8px; display: none; gap: 4px; }
+  .msg:hover .actions { display: flex; }
+  .icon-btn { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 4px; color: var(--muted); cursor: pointer; font-size: 12px; }
+  .icon-btn:hover { color: var(--text); background: var(--line); }
+  .cursor { display: inline-block; width: 8px; height: 14px; background: var(--text); animation: blink 1s steps(2) infinite; vertical-align: -2px; margin-left: 1px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .moderator { margin: 22px 0; }
+  .moderator .msg-head { color: var(--moderator); }
+  .moderator .msg-body { background: var(--moderator-bg); border-color: var(--moderator-line); }
+  .tool-call { font-size: 12px; color: var(--moderator); opacity: 0.85; margin-bottom: 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .tool-call.done { opacity: 0.6; }
+  .tool-chip { background: rgba(217, 164, 65, 0.12); border: 1px solid rgba(217, 164, 65, 0.4); padding: 2px 8px; border-radius: 4px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; cursor: pointer; }
+  .tool-chip:hover { background: rgba(217, 164, 65, 0.22); }
+  .footnote-ref { color: var(--moderator); cursor: pointer; font-size: 10px; vertical-align: super; text-decoration: none; }
+  .footnotes { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(217, 164, 65, 0.3); font-size: 11px; color: var(--moderator); opacity: 0.9; }
+  .footnotes ol { margin: 0; padding-left: 20px; }
+  .footnotes li { margin: 2px 0; }
+  .footnotes a { color: var(--moderator); }
+
+  .round-divider { display: flex; align-items: center; gap: 12px; color: var(--muted-2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; margin: 28px 0 8px; }
+  .round-divider::before, .round-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  /* Input + controls */
+  .input-bar { border-top: 1px solid var(--line); padding: 12px 20px 14px; background: var(--bg); }
+  .input-row { display: flex; gap: 10px; align-items: flex-end; max-width: 760px; margin: 0 auto; }
+  .input-wrap { flex: 1; position: relative; }
+  textarea.input { width: 100%; min-height: 44px; max-height: 120px; resize: none; background: var(--panel); border: 1px solid var(--line-2); color: var(--text); border-radius: 8px; padding: 11px 14px; font-family: inherit; font-size: 13px; outline: none; }
+  textarea.input:focus { border-color: var(--accent); }
+  .input-hint { font-size: 11px; color: var(--muted-2); margin-top: 6px; max-width: 760px; margin-left: auto; margin-right: auto; display: flex; justify-content: space-between; }
+  kbd { background: var(--panel-2); border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; font-size: 10px; font-family: ui-monospace, Menlo, monospace; }
+  .controls-strip { display: flex; gap: 8px; }
+
+  /* Right sidebar */
+  .sidebar-right .docs-list { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .doc-item { display: flex; gap: 8px; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 6px; font-size: 12px; }
+  .doc-icon { color: var(--muted); flex-shrink: 0; }
+  .doc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .doc-meta { font-size: 10px; color: var(--muted-2); }
+  .outline { padding: 0 12px 12px; }
+  .outline-item { font-size: 12px; padding: 6px 8px; color: var(--muted); border-left: 2px solid var(--line); cursor: pointer; }
+  .outline-item:hover { color: var(--text); border-color: var(--line-2); }
+  .outline-item.current { color: var(--text); border-color: var(--accent); }
+
+  /* Tiny utilities */
+  .spacer { flex: 1; }
+  .sep { height: 1px; background: var(--line); margin: 8px 0; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- LEFT SIDEBAR: PERSONAS -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name">debate</span>
+    </div>
+
+    <div class="topic-card">
+      <div class="topic-label">Topic</div>
+      <div class="topic-text">Has the AI agent hype cycle peaked?</div>
+      <div class="meta-row">
+        <span class="meta-pill">Round 3 of ∞</span>
+        <span class="meta-pill">4 personas</span>
+      </div>
+    </div>
+
+    <h3>Panel</h3>
+    <div class="personas">
+      <div class="persona">
+        <div class="avatar" style="background: var(--persona-1);">AC</div>
+        <div class="persona-info">
+          <div class="persona-name">Alex Chen</div>
+          <div class="persona-model">gpt-4o</div>
+        </div>
+      </div>
+      <div class="persona speaking">
+        <div class="avatar" style="background: var(--persona-2);">JR</div>
+        <div class="persona-info">
+          <div class="persona-name">Jordan Rivera</div>
+          <div class="persona-model">claude-sonnet-4-6</div>
+        </div>
+        <div class="speaking-dot" title="Speaking"></div>
+      </div>
+      <div class="persona">
+        <div class="avatar" style="background: var(--persona-3);">SC</div>
+        <div class="persona-info">
+          <div class="persona-name">Dr. Sarah Chen</div>
+          <div class="persona-model">gpt-4o</div>
+        </div>
+      </div>
+      <div class="persona">
+        <div class="avatar" style="background: var(--persona-4);">M</div>
+        <div class="persona-info">
+          <div class="persona-name">Moderator</div>
+          <div class="persona-model">gpt-5.2 · web</div>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="persona">
+        <div class="avatar" style="background: #444; color: #ccc;">You</div>
+        <div class="persona-info">
+          <div class="persona-name">You</div>
+          <div class="persona-model">human — Ctrl+I to inject</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <h3>Past Debates</h3>
+    <div style="padding: 0 12px 16px;">
+      <div class="outline-item">2026-05-10 — RAG vs fine-tuning</div>
+      <div class="outline-item">2026-05-07 — Will GPUs commoditize?</div>
+      <div class="outline-item">2026-05-02 — Open vs closed weights</div>
+    </div>
+  </aside>
+
+
+  <!-- MAIN: DEBATE -->
+  <main class="main">
+    <div class="header">
+      <div class="header-left">
+        <span class="topic-title">Has the AI agent hype cycle peaked?</span>
+        <span class="round-pill">Round 3</span>
+      </div>
+      <div class="header-actions controls-strip">
+        <button class="btn">Change Topic</button>
+        <button class="btn">Conclude</button>
+        <button class="btn danger">End Session</button>
+      </div>
+    </div>
+
+    <div class="queue-bar">
+      <span class="queue-label">Order this round</span>
+      <div class="queue-chips">
+        <span class="chip done"><span class="chip-dot" style="background: var(--persona-1);"></span>Alex Chen</span>
+        <span class="chip current"><span class="chip-dot" style="background: var(--persona-2);"></span>Jordan Rivera</span>
+        <span class="chip"><span class="chip-dot" style="background: var(--persona-3);"></span>Dr. Sarah Chen</span>
+        <span class="chip"><span class="chip-dot" style="background: var(--persona-4);"></span>Moderator summary</span>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn" title="Reshuffle">↻ Reshuffle</button>
+    </div>
+
+    <div class="scroll">
+      <div class="messages">
+
+        <div class="round-divider">Round 2 Recap</div>
+
+        <!-- moderator round summary from previous round, with fact-check citations -->
+        <div class="msg moderator">
+          <div class="msg-head">
+            <span class="msg-name">Moderator</span>
+            <span class="msg-model-badge">gpt-5.2 · web_search</span>
+            <span class="msg-time">14:22</span>
+          </div>
+          <div class="msg-body">
+            <div class="tool-call done">
+              <span class="tool-chip">🔍 "agent funding rounds Q1 2026"</span>
+              <span class="tool-chip">🔍 "Sierra AI valuation"</span>
+              <span class="tool-chip">✓ 2 searches · 7 sources</span>
+            </div>
+            <p>Both Alex and Jordan are pointing at the same data and reading it differently. Alex's claim that <strong>"agent startup funding has doubled YoY"</strong> checks out — Q1 2026 saw $4.3B in agent-tagged rounds vs. $1.9B in Q1 2025<a class="footnote-ref" href="#fn1">[1]</a>. Jordan's counter-claim that <strong>"top-of-funnel demos aren't converting"</strong> is partially supported: Sierra reported 31% pilot-to-paid conversion<a class="footnote-ref" href="#fn2">[2]</a>, which is high; but the broader cohort tracked by Menlo shows median pilot-to-paid at 11%<a class="footnote-ref" href="#fn3">[3]</a>.</p>
+            <p>Open thread for round 3: <em>is "agent" being used to mean too many different things to measure consistently?</em> Dr. Chen, you've been quiet — your turn.</p>
+            <div class="footnotes">
+              <ol>
+                <li id="fn1"><a href="#">PitchBook agent-startup tracker, Q1 2026</a></li>
+                <li id="fn2"><a href="#">Sierra AI Series C announcement, 2026-04-18</a></li>
+                <li id="fn3"><a href="#">Menlo Ventures enterprise AI survey, 2026 Q1</a></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="round-divider">Round 3</div>
+
+        <!-- Alex (done) -->
+        <div class="msg">
+          <div class="msg-head">
+            <span class="avatar" style="background: var(--persona-1); width: 22px; height: 22px; font-size: 10px;">AC</span>
+            <span class="msg-name" style="color: var(--persona-1);">Alex Chen</span>
+            <span class="msg-model-badge">gpt-4o</span>
+            <span class="msg-time">14:24</span>
+          </div>
+          <div class="msg-body">
+            <p>Look, the definitional argument is a distraction. Capital follows working systems. The fact that Menlo's median is 11% doesn't refute me — it tells you the <strong>top quartile</strong> is doing something the median isn't. That's a market sorting itself, not a bubble.</p>
+            <p>I'll grant Jordan one thing: the word "agent" is doing too much work. But that's a marketing problem, not a substance problem. The substance is: <code>can a system take a goal, decompose it, call tools, and finish?</code> Sierra can. Cognition can. The rest will either learn or fold.</p>
+          </div>
+          <div class="actions">
+            <button class="icon-btn" title="Regenerate">↻</button>
+            <button class="icon-btn" title="Edit">✎</button>
+            <button class="icon-btn" title="Copy">⧉</button>
+          </div>
+        </div>
+
+        <!-- Jordan (currently streaming) -->
+        <div class="msg">
+          <div class="msg-head">
+            <span class="avatar" style="background: var(--persona-2); width: 22px; height: 22px; font-size: 10px;">JR</span>
+            <span class="msg-name" style="color: var(--persona-2);">Jordan Rivera</span>
+            <span class="msg-model-badge">claude-sonnet-4-6</span>
+            <span class="msg-time">14:25</span>
+          </div>
+          <div class="msg-body streaming">
+            <p>Alex, "the market is sorting itself" is the most reliable bubble-era sentence in venture history. We heard it about WeWork, we heard it about no-code, we heard it about crypto-for-everything in 2021.</p>
+            <p>The Menlo number isn't a sorting signal. It's the <strong>base rate</strong>. When you say "the top quartile is doing something the median isn't," you're describing survivorship, not selection. The median enterprise pilot is converting at 11% because most of these agents fail on the work, and<span class="cursor"></span></p>
+          </div>
+          <div class="actions">
+            <button class="icon-btn" title="Pause stream">⏸</button>
+            <button class="icon-btn" title="Regenerate">↻</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <div class="input-row">
+        <div class="input-wrap">
+          <textarea class="input" placeholder="Inject a message (or wait for the round to finish)..." disabled></textarea>
+        </div>
+        <button class="btn primary">Send ↵</button>
+        <button class="btn" title="Next Round">⏭ Next Round</button>
+      </div>
+      <div class="input-hint">
+        <span><kbd>Ctrl</kbd>+<kbd>I</kbd> interrupt · <kbd>Ctrl</kbd>+<kbd>N</kbd> next round · <kbd>Esc</kbd> end</span>
+        <span>Jordan is speaking — input unlocks after the round</span>
+      </div>
+    </div>
+  </main>
+
+
+  <!-- RIGHT SIDEBAR: DOCUMENTS + OUTLINE -->
+  <aside class="sidebar sidebar-right">
+    <h3>Documents</h3>
+    <div class="docs-list">
+      <div class="doc-item">
+        <span class="doc-icon">📄</span>
+        <div style="min-width: 0; flex: 1;">
+          <div class="doc-name">menlo-enterprise-ai-2026q1.pdf</div>
+          <div class="doc-meta">28 pages · cited 3×</div>
+        </div>
+      </div>
+      <div class="doc-item">
+        <span class="doc-icon">📄</span>
+        <div style="min-width: 0; flex: 1;">
+          <div class="doc-name">a16z-agent-economy-2026.md</div>
+          <div class="doc-meta">14k tokens · cited 1×</div>
+        </div>
+      </div>
+      <div class="doc-item">
+        <span class="doc-icon">+</span>
+        <div class="doc-name" style="color: var(--muted);">Add document...</div>
+      </div>
+    </div>
+
+    <h3>Transcript</h3>
+    <div class="outline">
+      <div class="outline-item">Moderator — Intro</div>
+      <div class="outline-item">R1: opening positions</div>
+      <div class="outline-item">R1: moderator summary</div>
+      <div class="outline-item">R2: rebuttals</div>
+      <div class="outline-item">R2: moderator summary</div>
+      <div class="outline-item current">R3: in progress</div>
+    </div>
+
+    <h3>Session</h3>
+    <div style="padding: 0 16px 16px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 6px;">
+      <div><span style="color: var(--muted-2);">Started</span> 13:48 today</div>
+      <div><span style="color: var(--muted-2);">Messages</span> 11</div>
+      <div><span style="color: var(--muted-2);">Cost so far</span> $0.34</div>
+      <button class="btn" style="margin-top: 8px;">Export transcript</button>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  // tiny demo: make the cursor pretend that more text is arriving
+  const streamingPara = document.querySelector('.msg-body.streaming p:last-child');
+  if (streamingPara) {
+    const cursor = streamingPara.querySelector('.cursor');
+    const moreText = " their failures don't show up in pitch decks — they show up in renewals six months later.";
+    let i = 0;
+    setInterval(() => {
+      if (i >= moreText.length) return;
+      cursor.before(moreText[i]);
+      i++;
+    }, 55);
+  }
+</script>
+</body>
+</html>

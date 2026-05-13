@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ensemble — New session</title>
+<style>
+  :root {
+    --bg: #f6f3ec;
+    --bg-2: #efeadf;
+    --ink: #1c1a17;
+    --ink-soft: #3a3631;
+    --muted: #8a8278;
+    --muted-2: #b5ad9e;
+    --rule: #c9bfa9;
+    --rule-soft: #ddd3bb;
+    --accent: #6a4c1f;
+    --moderator: #7a5a16;
+    --moderator-bg: #faf2db;
+    --moderator-rule: #d9b766;
+    --debate: #843a3a;     /* burgundy */
+    --debate-bg: #f4eae5;
+    --roundtable: #2b5b4e; /* deep teal */
+    --roundtable-bg: #e7efea;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif; font-size: 16px; line-height: 1.65; }
+
+  /* TOP BAR */
+  .topbar { position: fixed; top: 0; left: 0; right: 0; backdrop-filter: blur(8px); background: rgba(246, 243, 236, 0.85); border-bottom: 1px solid var(--rule-soft); z-index: 10; }
+  .topbar-inner { max-width: 1080px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; font-size: 13px; }
+  .brand { font-family: "Iowan Old Style", "Palatino", serif; font-style: italic; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; font-size: 15px; }
+  .topbar .sep { width: 1px; height: 18px; background: var(--rule-soft); }
+  .topbar .crumbs { color: var(--muted); }
+  .topbar .crumbs b { color: var(--ink-soft); font-weight: 600; }
+  .topbar .actions { margin-left: auto; display: flex; gap: 8px; }
+  .topbar button { font-family: inherit; background: transparent; border: 1px solid var(--rule); color: var(--ink-soft); padding: 4px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+  .topbar button:hover { background: var(--bg-2); }
+
+  /* PAGE */
+  .page { max-width: 920px; margin: 0 auto; padding: 96px 40px 80px; }
+
+  .lead { text-align: center; margin-bottom: 44px; }
+  .lead .kicker { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .lead h1 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 38px; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.01em; font-weight: 600; }
+  .lead h1 em { font-style: italic; color: var(--accent); }
+  .lead .sub { font-size: 15px; color: var(--ink-soft); font-style: italic; max-width: 540px; margin: 0 auto; }
+
+  /* SECTION HEADERS */
+  .section { display: flex; align-items: center; gap: 14px; margin: 30px 0 18px; }
+  .section::before, .section::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .section h2 { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0; }
+
+  /* TEMPLATE CARDS */
+  .templates { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+  .template { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 24px 26px 22px; position: relative; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease; box-shadow: 0 1px 0 rgba(40, 30, 10, 0.04); display: flex; flex-direction: column; min-height: 460px; }
+  .template:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(40, 30, 10, 0.08); border-color: var(--ink-soft); }
+  .template.selected { border-color: var(--accent); border-width: 2px; padding: 23px 25px 21px; box-shadow: 0 6px 28px rgba(40, 30, 10, 0.1); }
+
+  .t-corner { position: absolute; top: 0; right: 0; padding: 6px 10px; font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #fff; font-weight: 600; }
+  .t-corner.debate { background: var(--debate); }
+  .t-corner.roundtable { background: var(--roundtable); }
+
+  .t-illustration { font-family: "Iowan Old Style", serif; font-size: 11px; color: var(--muted); padding: 14px; background: var(--bg); border: 1px dashed var(--rule); border-radius: 3px; margin-bottom: 18px; line-height: 1.5; }
+  .t-illustration .role { font-variant: small-caps; letter-spacing: 0.06em; font-weight: 600; }
+  .t-illustration .role.p1 { color: var(--debate); }
+  .t-illustration .role.p2 { color: var(--roundtable); }
+  .t-illustration .role.mod { color: var(--moderator); }
+  .t-illustration .line { display: flex; gap: 10px; margin: 4px 0; }
+  .t-illustration .role-col { min-width: 70px; text-align: right; }
+  .t-illustration .dialog-col { flex: 1; font-style: italic; }
+  .t-illustration .mod-line { font-style: italic; color: var(--moderator); padding: 4px 8px; background: var(--moderator-bg); border-left: 2px solid var(--moderator-rule); margin: 6px 0; font-size: 10px; }
+
+  .t-name { font-family: "Iowan Old Style", serif; font-size: 28px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .t-tagline { font-style: italic; color: var(--ink-soft); margin-bottom: 16px; font-size: 14px; }
+
+  .t-attrs { list-style: none; padding: 0; margin: 0 0 18px; flex: 1; }
+  .t-attrs li { display: flex; gap: 10px; margin: 7px 0; font-family: -apple-system, sans-serif; font-size: 12px; color: var(--ink-soft); }
+  .t-attrs .label { color: var(--muted); min-width: 88px; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; padding-top: 1px; }
+  .t-attrs .value { flex: 1; }
+
+  .t-actions { display: flex; gap: 10px; align-items: center; padding-top: 14px; border-top: 1px solid var(--rule-soft); margin-top: auto; }
+  .t-btn { font-family: -apple-system, sans-serif; font-size: 12px; padding: 7px 14px; border-radius: 3px; cursor: pointer; border: 1px solid var(--rule); background: var(--bg-2); color: var(--ink-soft); }
+  .t-btn.primary { background: var(--accent); color: #faf2db; border-color: var(--accent); font-weight: 600; }
+  .t-btn.primary:hover { background: #8a6326; }
+  .t-btn.ghost { background: transparent; }
+  .t-meta { margin-left: auto; font-family: -apple-system, sans-serif; font-size: 11px; color: var(--muted); }
+
+  /* CUSTOM ROW */
+  .custom-row { margin-top: 24px; padding: 18px 22px; background: var(--bg-2); border: 1px dashed var(--rule); border-radius: 4px; display: flex; align-items: center; gap: 16px; }
+  .custom-row .icon { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 18px; flex-shrink: 0; }
+  .custom-row .text { flex: 1; }
+  .custom-row .text strong { display: block; font-family: -apple-system, sans-serif; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .custom-row .text span { font-size: 13px; color: var(--ink-soft); font-style: italic; }
+  .custom-row .t-btn { margin-left: auto; }
+
+  /* RECENT SESSIONS */
+  .recent { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .recent-card { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 16px; cursor: pointer; transition: border-color 0.12s ease; display: flex; flex-direction: column; gap: 6px; }
+  .recent-card:hover { border-color: var(--ink-soft); }
+  .recent-card .r-template { font-family: -apple-system, sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+  .recent-card .r-template.debate { color: var(--debate); }
+  .recent-card .r-template.roundtable { color: var(--roundtable); }
+  .recent-card .r-topic { font-family: "Iowan Old Style", serif; font-size: 15px; font-weight: 500; line-height: 1.3; color: var(--ink); }
+  .recent-card .r-cast { font-style: italic; font-size: 12px; color: var(--muted); }
+  .recent-card .r-meta { font-family: -apple-system, sans-serif; font-size: 10px; color: var(--muted-2); margin-top: 4px; }
+
+  /* PERSONA LIBRARY HINT */
+  .persona-hint { margin-top: 36px; padding: 14px 18px; background: var(--bg); border: 1px solid var(--rule-soft); border-radius: 4px; display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--ink-soft); }
+  .persona-hint .count { font-family: "Iowan Old Style", serif; font-size: 22px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .persona-hint .label { flex: 1; }
+  .persona-hint a { color: var(--accent); text-decoration: none; font-weight: 600; font-family: -apple-system, sans-serif; font-size: 12px; }
+  .persona-hint a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">ensemble</span>
+    <span class="sep"></span>
+    <span class="crumbs"><b>New session</b></span>
+    <div class="actions">
+      <button>Manage personas</button>
+      <button>History</button>
+      <button>Settings</button>
+    </div>
+  </div>
+</div>
+
+<main class="page">
+
+  <header class="lead">
+    <div class="kicker">A new scene</div>
+    <h1>Who's at the table, and <em>what are they here to do?</em></h1>
+    <p class="sub">Pick a format. You'll cast the personas, set the scenario, and start the read on the next screen.</p>
+  </header>
+
+  <div class="section"><h2>Templates</h2></div>
+
+  <div class="templates">
+
+    <!-- DEBATE -->
+    <article class="template selected">
+      <div class="t-corner debate">Debate</div>
+      <div class="t-illustration">
+        <div class="line"><div class="role-col role p1">PRO</div><div class="dialog-col">Capital follows working systems…</div></div>
+        <div class="line"><div class="role-col role p2">CON</div><div class="dialog-col">That's the bubble-era sentence.</div></div>
+        <div class="mod-line">🔍 fact-check &nbsp;·&nbsp; <strong>Moderator:</strong> Pro's claim checks out; Con's is partially supported…</div>
+        <div class="line"><div class="role-col role p1">PRO</div><div class="dialog-col">Right, but the Menlo median is the wrong number to anchor on…</div></div>
+      </div>
+      <h3 class="t-name">Debate</h3>
+      <p class="t-tagline">Two sides, a moderator who checks the work, and rounds that build toward a verdict.</p>
+      <ul class="t-attrs">
+        <li><span class="label">Cast</span><span class="value">2+ personas assigned to <strong>Pro</strong> or <strong>Con</strong></span></li>
+        <li><span class="label">Turn order</span><span class="value">Alternating, with shuffle each round</span></li>
+        <li><span class="label">Moderator</span><span class="value">Required — fact-checks via web search after each round</span></li>
+        <li><span class="label">Concludes</span><span class="value">With a <strong>verdict</strong> synthesizing strongest arguments</span></li>
+        <li><span class="label">Best for</span><span class="value">Stress-testing positions, exploring tradeoffs, prep for hard conversations</span></li>
+      </ul>
+      <div class="t-actions">
+        <button class="t-btn primary">Use Debate →</button>
+        <button class="t-btn ghost">See example</button>
+        <span class="t-meta">12 past debates</span>
+      </div>
+    </article>
+
+    <!-- ROUNDTABLE -->
+    <article class="template">
+      <div class="t-corner roundtable">Roundtable</div>
+      <div class="t-illustration">
+        <div class="line"><div class="role-col role p2">KEITH</div><div class="dialog-col">Concur — that's a really good point. The proper Kinelo answer would be…</div></div>
+        <div class="line"><div class="role-col role p1">MARK</div><div class="dialog-col">Right, but routing and lookup need different layers…</div></div>
+        <div class="line"><div class="role-col role p2">PETER</div><div class="dialog-col">I'm with Mark on the layering, but I'd add…</div></div>
+        <div class="line"><div class="role-col role p1">IAN</div><div class="dialog-col">Can we step back? What's the actual constraint?</div></div>
+      </div>
+      <h3 class="t-name">Roundtable</h3>
+      <p class="t-tagline">Equal voices, shuffled order, no moderator unless you want one. The original <em>sim.py</em> model.</p>
+      <ul class="t-attrs">
+        <li><span class="label">Cast</span><span class="value">2–6 personas, no assigned roles</span></li>
+        <li><span class="label">Turn order</span><span class="value">Reshuffled every round</span></li>
+        <li><span class="label">Moderator</span><span class="value">Optional — off by default</span></li>
+        <li><span class="label">Concludes</span><span class="value">Open-ended; you end the session when it's run its course</span></li>
+        <li><span class="label">Best for</span><span class="value">Standups, writers' rooms, panel discussions, exploring with your real-people personas</span></li>
+      </ul>
+      <div class="t-actions">
+        <button class="t-btn primary">Use Roundtable →</button>
+        <button class="t-btn ghost">See example</button>
+        <span class="t-meta">3 past roundtables</span>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- CUSTOM -->
+  <div class="custom-row">
+    <div class="icon">+</div>
+    <div class="text">
+      <strong>Or build a custom format</strong>
+      <span>Pick your own turn-taking, moderator role, and conclude action. Save it as a reusable template.</span>
+    </div>
+    <button class="t-btn">Build custom</button>
+  </div>
+
+
+  <!-- RECENT -->
+  <div class="section"><h2>Pick up where you left off</h2></div>
+
+  <div class="recent">
+    <article class="recent-card">
+      <div class="r-template debate">Debate</div>
+      <div class="r-topic">Has the AI agent hype cycle peaked?</div>
+      <div class="r-cast"><em>Alex Chen, Jordan Rivera, Dr. Sarah Chen</em></div>
+      <div class="r-meta">Round 3 in progress · today, 13:48</div>
+    </article>
+    <article class="recent-card">
+      <div class="r-template roundtable">Roundtable</div>
+      <div class="r-topic">Kinelo Q3 retro — what would we change?</div>
+      <div class="r-cast"><em>Keith, Ian, Jon, Mark, Peter</em></div>
+      <div class="r-meta">Concluded · 3 days ago</div>
+    </article>
+    <article class="recent-card">
+      <div class="r-template debate">Debate</div>
+      <div class="r-topic">Should small teams choose RAG over fine-tuning in 2026?</div>
+      <div class="r-cast"><em>Alex Chen, Jordan Rivera</em></div>
+      <div class="r-meta">Concluded · last week</div>
+    </article>
+  </div>
+
+  <!-- PERSONA LIBRARY -->
+  <div class="persona-hint">
+    <span class="count">8</span>
+    <span class="label">personas in your library — ready to cast in any session.</span>
+    <a href="#">Manage personas →</a>
+  </div>
+
+</main>
+
+</body>
+</html>
