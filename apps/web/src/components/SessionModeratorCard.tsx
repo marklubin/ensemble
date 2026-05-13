@@ -1,11 +1,9 @@
 import { useState } from "react";
 import type { ModeratorBlockVM } from "../screens/session/reducer.ts";
-import type { SeatInfo } from "@ensemble/shared";
+import type { ModeratorAction, SeatInfo } from "@ensemble/shared";
 
-export interface ModeratorAction {
-  tool: "force_speaker" | "cooldown" | "bypass" | "inject";
-  args: Record<string, unknown>;
-}
+// Re-export so existing imports from this module keep working.
+export type { ModeratorAction } from "@ensemble/shared";
 
 export interface SessionModeratorCardProps {
   block: ModeratorBlockVM;

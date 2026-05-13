@@ -13,6 +13,8 @@
 export interface IMemoryStore {
   read(sessionId: string, seatId: string, key: string): unknown;
   write(sessionId: string, seatId: string, key: string, value: unknown): void;
+  /** Returns true if a value was removed. */
+  delete(sessionId: string, seatId: string, key: string): boolean;
   list(sessionId: string, seatId: string): string[];
   /** For UI inspection */
   dump(sessionId: string, seatId: string): Record<string, unknown>;
@@ -39,6 +41,12 @@ export class MemoryStore implements IMemoryStore {
       this.data.set(ns, bucket);
     }
     bucket.set(k, v);
+  }
+
+  delete(sessionId: string, seatId: string, k: string): boolean {
+    const bucket = this.data.get(this.key(sessionId, seatId));
+    if (!bucket) return false;
+    return bucket.delete(k);
   }
 
   list(sessionId: string, seatId: string): string[] {

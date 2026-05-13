@@ -13,7 +13,11 @@
  * wiring the real endpoints — the live path will just start succeeding
  * and the mock branches fall away naturally.
  */
-import type { PersonaSpec, Template } from "@ensemble/shared";
+import type {
+  CreateSessionRequest as SharedCreateSessionRequest,
+  PersonaSpec,
+  Template,
+} from "@ensemble/shared";
 
 // ─── Mock data ────────────────────────────────────────────────────────
 
@@ -165,17 +169,11 @@ for (const p of MOCK_PERSONAS) personaStore.set(p.id, p);
 
 // ─── Public API ───────────────────────────────────────────────────────
 
-export interface CreateSessionRequest {
-  template_id: string;
-  scenario: string;
-  cast: Array<{
-    seat_id?: string;
-    persona_id: string;
-    role?: string;
-    runtime_type: "managed-agents" | "claude-code" | "human";
-  }>;
-  length: { kind: "open-ended" } | { kind: "n-rounds"; rounds: number };
-}
+/**
+ * Server's POST /sessions request shape. Re-exported from
+ * @ensemble/shared so the web client and server agree.
+ */
+export type CreateSessionRequest = SharedCreateSessionRequest;
 
 export interface CreateSessionResponse {
   session_id: string;

@@ -13,11 +13,23 @@ import { z } from "zod";
 export const BuzzerPressInput = z.object({
   intensity: z.number().min(0).max(10),
   intent: z.string().min(1).describe("one sentence: what you'd contribute"),
+  /**
+   * Buzz-check nonce echoed back from the prompt. The runtime injected
+   * this verbatim into the buzz-check instruction; the BuzzCoordinator
+   * uses (session_id, seat_id, nonce) to route the resolution.
+   *
+   * Optional only for tolerance with older runtimes that embedded the
+   * nonce as a `#nonce:XXX` suffix in `intent`. New runtimes MUST pass
+   * the structured field.
+   */
+  nonce: z.string().min(8).optional(),
 });
 export type BuzzerPressInput = z.infer<typeof BuzzerPressInput>;
 
 export const BuzzerPassInput = z.object({
   reason: z.string().optional(),
+  /** See `BuzzerPressInput.nonce`. */
+  nonce: z.string().min(8).optional(),
 });
 export type BuzzerPassInput = z.infer<typeof BuzzerPassInput>;
 

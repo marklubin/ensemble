@@ -3,6 +3,7 @@ import type {
   InstanceHandle,
   PersonaRuntime,
   SeatInfo,
+  SessionLength,
   SseEvent,
   TurnEvent,
   TurnTakingMode,
@@ -22,13 +23,9 @@ export {
 } from "./pick-order.ts";
 export type { PollResult, PickOrderInput } from "./pick-order.ts";
 
-/**
- * Session length — `open-ended` runs until `end()` is called.
- * `n_rounds=N` runs N rounds and then ends with `n-rounds-reached`.
- */
-export type SessionLength =
-  | { kind: "open-ended" }
-  | { kind: "n_rounds"; n: number };
+// Re-export shared SessionLength so callers that previously imported
+// from this module keep working.
+export type { SessionLength } from "@ensemble/shared";
 
 export interface SchedulerOptions {
   sessionId: string;
