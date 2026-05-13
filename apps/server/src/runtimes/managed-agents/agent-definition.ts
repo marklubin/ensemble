@@ -26,12 +26,17 @@ export interface AgentDefinition {
 
 export interface AgentDefinitionInput {
   persona: PersonaSpec;
-  ctx: Pick<SessionContext, "ensemble_mcp_url">;
+  ctx: Pick<
+    SessionContext,
+    "ensemble_mcp_url" | "scenario" | "scenario_format" | "cast"
+  >;
 }
 
 /**
  * Pure, deterministic content hash. Two attaches with the same persona +
- * MCP URL produce the same hash; different personas or URLs differ.
+ * MCP URL + scenario produce the same hash; differences in any of those
+ * differ. Scenario participates because the prompt depends on it; reusing
+ * a cached definition across scenarios would silently swap topics.
  */
 export function hashAgentDefinition(input: AgentDefinitionInput): string {
   const payload = JSON.stringify({
@@ -40,18 +45,71 @@ export function hashAgentDefinition(input: AgentDefinitionInput): string {
     role: input.persona.role ?? null,
     tools_allowed: [...input.persona.tools_allowed].sort(),
     mcp_url: input.ctx.ensemble_mcp_url,
+    scenario: input.ctx.scenario,
+    scenario_format: input.ctx.scenario_format,
+    cast: input.ctx.cast.map((s) => ({
+      seat_id: s.seat_id,
+      persona_name: s.persona_name,
+      role: s.role ?? null,
+    })),
   });
   return createHash("sha256").update(payload).digest("hex");
 }
 
-/** Build the system prompt sent to the underlying agent. */
-export function buildSystemPrompt(persona: PersonaSpec): string {
+/**
+ * Build the system prompt sent to the underlying agent. Includes:
+ *   - persona's system_prompt (their character / voice)
+ *   - the actual scenario being debated/discussed
+ *   - the cast (so the persona knows who else is in the room)
+ *   - role in the scene (Pro / Con / etc)
+ *   - tool guidance for the MCP host
+ */
+export function buildSystemPrompt(
+  persona: PersonaSpec,
+  ctx?: Pick<SessionContext, "scenario" | "scenario_format" | "cast">,
+): string {
   const parts: string[] = [persona.system_prompt.trim()];
+
+  if (ctx) {
+    const verb = scenarioVerb(ctx.scenario_format);
+    parts.push(
+      [
+        "",
+        `# The scene`,
+        ``,
+        `You are participating in a multi-persona session. The ${verb}:`,
+        ``,
+        ctx.scenario.trim(),
+        ``,
+        `Stay focused on this specific topic. Respond in first person as your character.`,
+      ].join("\n"),
+    );
+
+    const otherSeats = ctx.cast
+      .filter((s) => s.persona_name !== persona.name)
+      .map(
+        (s) =>
+          `- **${s.persona_name}**${s.role ? ` (${s.role})` : ""}`,
+      );
+    if (otherSeats.length > 0) {
+      parts.push(
+        [
+          "",
+          `# Other participants`,
+          "",
+          otherSeats.join("\n"),
+          "",
+          `Respond to what they actually said, by name when relevant.`,
+        ].join("\n"),
+      );
+    }
+  }
+
   if (persona.voice_signature) {
     parts.push(`\n**Voice:** ${persona.voice_signature}`);
   }
   if (persona.role) {
-    parts.push(`\n**Role in this scene:** ${persona.role}`);
+    parts.push(`\n**Your role in this scene:** ${persona.role}`);
   }
   if (persona.tools_allowed.length > 0) {
     parts.push(
@@ -60,6 +118,21 @@ export function buildSystemPrompt(persona: PersonaSpec): string {
     );
   }
   return parts.join("\n");
+}
+
+function scenarioVerb(format: string): string {
+  switch (format) {
+    case "motion":
+      return "motion before the table is";
+    case "question":
+      return "question on the table is";
+    case "scenario":
+      return "scenario being explored is";
+    case "document":
+      return "document under discussion concerns";
+    default:
+      return "topic of this session is";
+  }
 }
 
 /**
@@ -91,7 +164,7 @@ export class AgentDefinitionCache {
     const def: AgentDefinition = {
       id: `agentdef_${hash.slice(0, 16)}`,
       contentHash: hash,
-      systemPrompt: buildSystemPrompt(input.persona),
+      systemPrompt: buildSystemPrompt(input.persona, input.ctx),
       toolsAllowed: [...input.persona.tools_allowed],
       mcpUrl: input.ctx.ensemble_mcp_url,
     };

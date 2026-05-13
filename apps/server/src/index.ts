@@ -13,6 +13,7 @@ import { runtimes, uiBridge, channelCoordinator } from "./runtimes/index.ts";
 import { createChannelsRoutes } from "./channels/ws-route.ts";
 import { websocket } from "hono/bun";
 import { logger, shortId } from "./logging/index.ts";
+import { siteAccessGate } from "./auth/site-access.ts";
 
 // Process-level error trap: log before Bun tears the process down.
 // Surfaces stack traces that would otherwise vanish into Fly's
@@ -91,6 +92,11 @@ app.onError((err, c) => {
 });
 
 app.use("*", cors());
+
+// Site-wide access gate. No-op when SITE_ACCESS_KEY is unset (dev/test).
+// In production a wrong/missing key → tiny HTML login form for browsers,
+// 401 JSON for API consumers. /health bypasses so Fly's healthcheck works.
+app.use("*", siteAccessGate());
 
 app.get("/health", (c) =>
   c.json({
