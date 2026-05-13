@@ -60,6 +60,10 @@ export default defineConfig({
             "MANAGED_AGENTS_MODE=direct " +
             "ENSEMBLE_TEST_MODE=fixture " +
             "ENSEMBLE_E2E_FIXTURES=./e2e/fixtures/default.json " +
+            // Enable the in-memory log ring buffer so the per-test
+            // failure fixture can GET /__logs to bundle server logs
+            // alongside the Playwright trace.
+            "LOG_RING_BUFFER_SIZE=5000 " +
             "PORT=4111 " +
             "bun --filter @ensemble/server start",
           url: "http://localhost:4111/health",
