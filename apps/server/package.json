@@ -15,9 +15,11 @@
     "@ensemble/spi-conformance": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "hono": "^4.6.10",
+    "ws": "^8.20.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@ensemble/spi-conformance": "workspace:*"
+    "@ensemble/spi-conformance": "workspace:*",
+    "@types/ws": "^8.18.1"
   }
 }
