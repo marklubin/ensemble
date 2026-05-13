@@ -1,0 +1,50 @@
+name: Codex Adversarial Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: codex-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: codex review
+    runs-on: ubuntu-latest
+    # Skip drafts unless explicitly marked ready
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Codex on the PR diff
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/codex-review-prompt.md
+          sandbox: workspace-read
+          # Codex sees the working tree; the prompt asks it to review
+          # the diff between origin/<base> and HEAD.
+
+      - name: Post review as PR comment
+        if: steps.codex.outputs.final-message != ''
+        uses: actions/github-script@v7
+        env:
+          REVIEW: ${{ steps.codex.outputs.final-message }}
+        with:
+          script: |
+            const body = process.env.REVIEW;
+            if (!body || body.trim().length === 0) return;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `### Codex Adversarial Review\n\n${body}`,
+            });

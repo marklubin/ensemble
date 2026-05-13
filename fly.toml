@@ -1,0 +1,37 @@
+app = "ensemble"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "4111"
+  NODE_ENV = "production"
+  MEMORY_BACKEND = "sqlite"
+  MEMORY_SQLITE_PATH = "/data/ensemble.sqlite"
+  MCP_PUBLIC_URL = "https://ensemble.fly.dev/mcp"
+  # ANTHROPIC_API_KEY, JWT_SECRET, CLAUDE_CODE_RUNTIME_ENABLED
+  # come from `fly secrets set ...`
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+[http_service]
+  internal_port = 4111
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+
+[mounts]
+  source = "ensemble_data"
+  destination = "/data"
+  initial_size = "1gb"
