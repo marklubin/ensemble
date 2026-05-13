@@ -17,6 +17,7 @@ import {
   formatEventsAsTurnPrompt,
   formatBuzzCheckPrompt,
 } from "./prompts.ts";
+import { logger } from "../../logging/index.ts";
 
 /**
  * The "primary" v1 runtime per the spec: hits the Anthropic Managed
@@ -96,6 +97,14 @@ export class ManagedAgentsRuntime implements PersonaRuntime {
       definition,
     });
 
+    logger.info("managed_agents.attach", {
+      session_id: ctx.session_id,
+      seat_id: ctx.seat_id,
+      persona_id: persona.id,
+      handle_id: session.id,
+      model_id: this.modelId,
+    });
+
     return {
       id: session.id,
       seat_id: ctx.seat_id,
@@ -107,8 +116,14 @@ export class ManagedAgentsRuntime implements PersonaRuntime {
     handle: InstanceHandle,
     newEvents: TurnEvent[],
   ): AsyncIterable<string> {
-    this.mustGet(handle);
+    const state = this.mustGet(handle);
     const userMessage = formatEventsAsTurnPrompt(newEvents);
+    logger.info("managed_agents.takeTurn.start", {
+      session_id: state.session_id,
+      seat_id: state.seat_id,
+      handle_id: handle.id,
+      events_in: newEvents.length,
+    });
     const stream = this.client.beta.managedAgents.sessions.events.create({
       session_id: handle.id,
       role: "user",
@@ -116,6 +131,7 @@ export class ManagedAgentsRuntime implements PersonaRuntime {
       stream: true,
     });
 
+    let totalLen = 0;
     for await (const event of stream as AsyncIterable<AnyEvent>) {
       if (
         event.type === "content_block_delta" &&
@@ -123,9 +139,16 @@ export class ManagedAgentsRuntime implements PersonaRuntime {
         typeof event.delta.text === "string" &&
         event.delta.text.length > 0
       ) {
+        totalLen += event.delta.text.length;
         yield event.delta.text;
       }
     }
+    logger.info("managed_agents.takeTurn.end", {
+      session_id: state.session_id,
+      seat_id: state.seat_id,
+      handle_id: handle.id,
+      assistant_text_length: totalLen,
+    });
   }
 
   async buzzCheck(

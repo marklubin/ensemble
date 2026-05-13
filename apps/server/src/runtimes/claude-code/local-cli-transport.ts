@@ -29,6 +29,7 @@ import { join } from "node:path";
 
 import type { ClaudeCodeTransport } from "./transport.ts";
 import type { ClaudeCodeMessage, SessionBrief } from "./types.ts";
+import { logger } from "../../logging/index.ts";
 
 export interface LocalCliTransportOptions {
   /** Path to the `claude` CLI binary. Defaults to `claude` on $PATH. */
@@ -127,7 +128,23 @@ export class LocalCliTransport implements ClaudeCodeTransport {
       stdio: ["ignore", "pipe", "pipe"],
     }) as ChildProcessByStdio<null, Readable, Readable>;
 
+    logger.info("local_cli.spawn", {
+      session_id: sessionId,
+      pid: child.pid,
+      binary,
+      model,
+      kind: message.kind,
+    });
+
     session.child = child;
+    child.once("close", (code, signal) => {
+      logger.info("local_cli.exit", {
+        session_id: sessionId,
+        pid: child.pid,
+        code,
+        signal,
+      });
+    });
     const onTimeout = setTimeout(() => {
       try {
         child.kill();

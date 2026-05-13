@@ -91,6 +91,15 @@ export function openEventStream(opts: EventStreamOptions): EventStreamHandle {
     };
 
     es.onerror = (err) => {
+      // Surface SSE failures in the browser console with the URL +
+      // current readyState so we can correlate against server-side
+      // logs when the session screen appears to hang.
+      // eslint-disable-next-line no-console
+      console.error("[event-stream] SSE error", {
+        url: opts.url,
+        readyState: es.readyState,
+        err,
+      });
       opts.handlers.error?.(err);
       // EventSource auto-reconnects on transient errors when readyState
       // goes back to CONNECTING. If the server actually closed the

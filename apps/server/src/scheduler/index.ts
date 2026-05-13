@@ -12,6 +12,7 @@ import type {
 import { CooldownTracker } from "./cooldowns.ts";
 import { EventBus } from "./event-bus.ts";
 import { pickOrder, type PollResult } from "./pick-order.ts";
+import { logger } from "../logging/index.ts";
 
 export { EventBus } from "./event-bus.ts";
 export { CooldownTracker } from "./cooldowns.ts";
@@ -232,6 +233,11 @@ export class SessionScheduler {
     this.round += 1;
 
     const order = await this.computeOrder();
+    logger.info("round.start", {
+      session_id: this.sessionId,
+      round: this.round,
+      order,
+    });
     this.bus.publish({
       type: "round.start",
       session_id: this.sessionId,
@@ -376,6 +382,13 @@ export class SessionScheduler {
     }
 
     const turnId = `t${++this.turnCounter}`;
+    logger.info("turn.start", {
+      session_id: this.sessionId,
+      seat_id: seatId,
+      speaker: seat.persona_name,
+      round: this.round,
+      turn_id: turnId,
+    });
     this.bus.publish({
       type: "turn.start",
       session_id: this.sessionId,
@@ -413,13 +426,23 @@ export class SessionScheduler {
         });
       }
     } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error("turn.takeTurn_failed", {
+        session_id: this.sessionId,
+        seat_id: seatId,
+        speaker: seat.persona_name,
+        turn_id: turnId,
+        round: this.round,
+        error: error.message,
+        stack: error.stack,
+      });
       this.bus.publish({
         type: "tool.status",
         session_id: this.sessionId,
         seat_id: seatId,
         tool: "takeTurn",
         status: "error",
-        detail: err instanceof Error ? err.message : String(err),
+        detail: error.message,
         timestamp: this.now(),
       });
     }
@@ -437,6 +460,14 @@ export class SessionScheduler {
     // The speaker has "seen" their own utterance going forward.
     this.markSeenThrough(seatId, this.events.length);
 
+    logger.info("turn.end", {
+      session_id: this.sessionId,
+      seat_id: seatId,
+      speaker: seat.persona_name,
+      turn_id: turnId,
+      round: this.round,
+      full_text_length: full.length,
+    });
     this.bus.publish({
       type: "turn.end",
       session_id: this.sessionId,

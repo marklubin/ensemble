@@ -37,6 +37,7 @@ import {
   type ClaudeCodeRuntimeConfig,
   type SessionBrief,
 } from "./types.ts";
+import { logger } from "../../logging/index.ts";
 
 const DEFAULT_BUZZ_TIMEOUT_MS = 10_000;
 
@@ -86,6 +87,12 @@ export class ClaudeCodeRuntime implements PersonaRuntime {
     };
     const { session_id } = await this.transport.open(brief);
     this.sessions.set(session_id, { ctx, persona, brief });
+    logger.info("claude_code.attach", {
+      session_id: ctx.session_id,
+      seat_id: ctx.seat_id,
+      persona_id: persona.id,
+      handle_id: session_id,
+    });
     return {
       id: session_id,
       seat_id: ctx.seat_id,

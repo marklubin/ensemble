@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { IMemoryStore } from "./store.ts";
 import { sessionStore } from "../session/store.ts";
+import { logger } from "../logging/index.ts";
 
 /**
  * UI-facing memory routes. The MCP `memory.read|write|list` tools are
@@ -28,6 +29,11 @@ export function createMemoryRoutes(memory: IMemoryStore): Hono {
     if (!requireSession(id)) return c.json({ error: "not_found" }, 404);
     const seat_id = c.req.param("seat_id");
     const values = memory.dump(id, seat_id);
+    logger.debug("memory.list", {
+      session_id: id,
+      seat_id,
+      key_count: Object.keys(values).length,
+    });
     return c.json({
       session_id: id,
       seat_id,
@@ -42,6 +48,12 @@ export function createMemoryRoutes(memory: IMemoryStore): Hono {
     const seat_id = c.req.param("seat_id");
     const key = c.req.param("key");
     const value = memory.read(id, seat_id, key);
+    logger.debug("memory.read", {
+      session_id: id,
+      seat_id,
+      key,
+      exists: value !== undefined,
+    });
     return c.json({
       key,
       value: value ?? null,
@@ -67,6 +79,11 @@ export function createMemoryRoutes(memory: IMemoryStore): Hono {
         ? (body as { value: unknown }).value
         : body;
     memory.write(id, seat_id, key, value);
+    logger.debug("memory.write", {
+      session_id: id,
+      seat_id,
+      key,
+    });
     return c.json({ ok: true, key, value });
   });
 
@@ -76,6 +93,12 @@ export function createMemoryRoutes(memory: IMemoryStore): Hono {
     const seat_id = c.req.param("seat_id");
     const key = c.req.param("key");
     const removed = memory.delete(id, seat_id, key);
+    logger.debug("memory.delete", {
+      session_id: id,
+      seat_id,
+      key,
+      removed,
+    });
     return c.json({ ok: true, removed });
   });
 

@@ -14,6 +14,7 @@ import { sessionStore, type SessionState } from "./store.ts";
 import type { IPersonaStore } from "../personas/store.ts";
 import { config } from "../config/index.ts";
 import { mintSessionToken } from "../mcp/index.ts";
+import { logger } from "../logging/index.ts";
 
 /**
  * Phase-1 session HTTP routes.
@@ -181,6 +182,13 @@ sessions.post("/", async (c) => {
     state.eventCount += 1;
   });
   sessionStore.create(state);
+  logger.info("session.created", {
+    session_id: sessionId,
+    template_id: req.template_id,
+    cast_size: req.cast.length,
+    turn_taking_mode: req.turn_taking_mode,
+    length: req.length,
+  });
   return c.json({ session_id: sessionId });
 });
 
@@ -191,8 +199,13 @@ sessions.get("/:id", (c) => {
 });
 
 sessions.get("/:id/events", (c) => {
-  const state = sessionStore.get(c.req.param("id"));
+  const sessionId = c.req.param("id");
+  const state = sessionStore.get(sessionId);
   if (!state) return c.json({ error: "not_found" }, 404);
+  logger.info("sse.subscribe", {
+    session_id: sessionId,
+    status: state.status,
+  });
   return streamSSE(c, async (stream) => {
     const queue: SseEvent[] = [];
     let resolveWaiter: (() => void) | null = null;
@@ -210,6 +223,10 @@ sessions.get("/:id/events", (c) => {
     stream.onAbort(() => {
       closed = true;
       unsubscribe();
+      logger.info("sse.disconnect", {
+        session_id: sessionId,
+        reason: "client_abort",
+      });
       if (resolveWaiter) {
         const r = resolveWaiter;
         resolveWaiter = null;
@@ -229,12 +246,20 @@ sessions.get("/:id/events", (c) => {
         }
         while (queue.length > 0) {
           const ev = queue.shift()!;
+          logger.debug("sse.emit", {
+            session_id: sessionId,
+            event_type: ev.type,
+          });
           await stream.writeSSE({
             event: ev.type,
             data: JSON.stringify(ev),
           });
           if (ev.type === "session.end") {
             closed = true;
+            logger.info("sse.disconnect", {
+              session_id: sessionId,
+              reason: "session_end",
+            });
             break;
           }
         }
@@ -255,6 +280,13 @@ sessions.post("/:id/start", async (c) => {
     );
   }
 
+  logger.info("session.start", {
+    session_id: state.session_id,
+    template_id: state.template_id,
+    cast_size: state.cast.length,
+    turn_taking_mode: state.turn_taking_mode,
+  });
+
   // Resolve runtimes for each seat. Lookup order:
   //   1. per-session override (test injection)
   //   2. global runtime registry (orchestrator-owned)
@@ -272,6 +304,11 @@ sessions.post("/:id/start", async (c) => {
     state.runtimes.set(seat.seat_id, rt);
   }
   if (missing.length > 0) {
+    logger.error("session.start.runtime_unavailable", {
+      session_id: state.session_id,
+      missing_for_seats: missing,
+      available_runtimes: Object.keys(runtimeRegistry),
+    });
     return c.json(
       { error: "runtime_unavailable", missing_for_seats: missing },
       400,
@@ -339,14 +376,37 @@ sessions.post("/:id/start", async (c) => {
       ensemble_mcp_token: token,
     };
     try {
+      logger.info("runtime.attach.start", {
+        session_id: state.session_id,
+        seat_id: seat.seat_id,
+        runtime: runtime.name,
+        persona_name: seat.persona_name,
+        role: seat.role,
+      });
       const handle = await runtime.attach(persona, ctx);
       state.handles.set(seat.seat_id, handle);
+      logger.info("runtime.attach.ok", {
+        session_id: state.session_id,
+        seat_id: seat.seat_id,
+        runtime: runtime.name,
+        handle_id: handle.id,
+        capabilities: [...handle.capabilities],
+      });
     } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error("runtime.attach.failed", {
+        session_id: state.session_id,
+        seat_id: seat.seat_id,
+        runtime: runtime.name,
+        persona_name: seat.persona_name,
+        error: error.message,
+        stack: error.stack,
+      });
       return c.json(
         {
           error: "attach_failed",
           seat_id: seat.seat_id,
-          message: err instanceof Error ? err.message : String(err),
+          message: error.message,
         },
         500,
       );
@@ -366,17 +426,30 @@ sessions.post("/:id/start", async (c) => {
   state.status = "running";
   state.started_at = new Date().toISOString();
 
+  logger.info("scheduler.kickoff", {
+    session_id: state.session_id,
+    turn_taking_mode: state.turn_taking_mode,
+    seats: state.cast.map((s) => s.seat_id),
+  });
+
   // Run the scheduler as a background task; the SSE stream consumes
   // events as they're emitted. We swallow errors here and surface them
   // via the bus (`tool.status` events) so the SSE client sees them.
   void state.scheduler
     .start()
     .catch((err) => {
-      // eslint-disable-next-line no-console
-      console.error("[scheduler]", err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error("scheduler.crashed", {
+        session_id: state.session_id,
+        error: error.message,
+        stack: error.stack,
+      });
     })
     .finally(() => {
       state.status = "ended";
+      logger.info("scheduler.finished", {
+        session_id: state.session_id,
+      });
       void detachAll(state);
     });
 
@@ -386,6 +459,11 @@ sessions.post("/:id/start", async (c) => {
 sessions.post("/:id/end", async (c) => {
   const state = sessionStore.get(c.req.param("id"));
   if (!state) return c.json({ error: "not_found" }, 404);
+  logger.info("session.end", {
+    session_id: state.session_id,
+    reason: "user",
+    prior_status: state.status,
+  });
   if (state.scheduler) {
     state.scheduler.requestEnd("user");
   }

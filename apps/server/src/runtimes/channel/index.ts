@@ -39,6 +39,7 @@ import {
   type ChannelCoordinator,
   type ReplyChunk,
 } from "../../channels/coordinator.ts";
+import { logger } from "../../logging/index.ts";
 
 const DEFAULT_CAPABILITIES: ReadonlySet<Capability> = new Set([
   "streaming",
@@ -109,6 +110,17 @@ export class ChannelRuntime implements PersonaRuntime {
     const id = handleId(ctx.session_id, ctx.seat_id);
     this.sessions.set(id, { ctx, persona });
 
+    logger.info("channel.attach.start", {
+      session_id: ctx.session_id,
+      seat_id: ctx.seat_id,
+      persona_id: persona.id,
+      handle_id: id,
+      already_connected: this.coordinator.isConnected(
+        ctx.session_id,
+        ctx.seat_id,
+      ),
+    });
+
     // Wait a short period for the bridge to appear if it hasn't yet.
     // Polling is fine: registration is rare and the wait window is
     // bounded.
@@ -116,6 +128,16 @@ export class ChannelRuntime implements PersonaRuntime {
     if (waitMs > 0 && !this.coordinator.isConnected(ctx.session_id, ctx.seat_id)) {
       await waitForConnection(this.coordinator, ctx.session_id, ctx.seat_id, waitMs);
     }
+
+    logger.info("channel.attach.ok", {
+      session_id: ctx.session_id,
+      seat_id: ctx.seat_id,
+      handle_id: id,
+      connected: this.coordinator.isConnected(
+        ctx.session_id,
+        ctx.seat_id,
+      ),
+    });
 
     return {
       id,
@@ -140,6 +162,12 @@ export class ChannelRuntime implements PersonaRuntime {
       ensemble_persona: session.persona.name,
       kind: "turn",
     };
+    logger.info("channel.send", {
+      session_id: sessionId,
+      seat_id: seatId,
+      turn_id: turnId,
+      prompt_length: prompt.length,
+    });
     const replies = this.coordinator.sendTurnPrompt(
       sessionId,
       seatId,
@@ -149,7 +177,7 @@ export class ChannelRuntime implements PersonaRuntime {
       timeoutMs,
     );
 
-    return mapReplies(replies);
+    return mapReplies(replies, sessionId, seatId, turnId);
   }
 
   async buzzCheck(
@@ -233,9 +261,32 @@ export class ChannelRuntime implements PersonaRuntime {
 
 // ─── helpers ──────────────────────────────────────────────────────────
 
-async function* mapReplies(iter: AsyncIterable<ReplyChunk>): AsyncIterable<string> {
-  for await (const r of iter) {
-    if (r.content.length > 0) yield r.content;
+async function* mapReplies(
+  iter: AsyncIterable<ReplyChunk>,
+  sessionId?: string,
+  seatId?: string,
+  turnId?: string,
+): AsyncIterable<string> {
+  let totalLen = 0;
+  let chunkCount = 0;
+  try {
+    for await (const r of iter) {
+      if (r.content.length > 0) {
+        totalLen += r.content.length;
+        chunkCount += 1;
+        yield r.content;
+      }
+    }
+  } finally {
+    if (sessionId && seatId && turnId) {
+      logger.info("channel.receive_complete", {
+        session_id: sessionId,
+        seat_id: seatId,
+        turn_id: turnId,
+        total_length: totalLen,
+        chunk_count: chunkCount,
+      });
+    }
   }
 }
 

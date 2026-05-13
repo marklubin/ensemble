@@ -10,6 +10,7 @@ import {
   type HandlerDeps,
 } from "./handlers.ts";
 import type { TokenPayload } from "../auth/jwt.ts";
+import { logger } from "../logging/index.ts";
 
 /**
  * Build a fully-wired `McpServer` for a single authenticated caller.
@@ -58,7 +59,29 @@ export function buildMcpServerForAuth(
         inputSchema: inputShape,
       },
       async (args: unknown) => {
-        return handler(auth, args);
+        try {
+          const result = await handler(auth, args);
+          const isError = Boolean(
+            (result as { isError?: boolean }).isError,
+          );
+          logger.info("mcp.tool_call", {
+            session_id: auth.session_id,
+            seat_id: auth.seat_id,
+            tool: toolName,
+            success: !isError,
+          });
+          return result;
+        } catch (err) {
+          const error = err instanceof Error ? err : new Error(String(err));
+          logger.error("mcp.tool_call.error", {
+            session_id: auth.session_id,
+            seat_id: auth.seat_id,
+            tool: toolName,
+            error: error.message,
+            stack: error.stack,
+          });
+          throw err;
+        }
       },
     );
   }

@@ -21,6 +21,7 @@ import {
   type TurnEvent,
 } from "@ensemble/shared";
 import { UiBridge } from "../../ui-bridge/index.ts";
+import { logger } from "../../logging/index.ts";
 
 interface HumanHandleInternal {
   id: string;
@@ -69,6 +70,12 @@ export class HumanRuntime implements PersonaRuntime {
     };
     this.handles.set(id, internal);
     this.bridge.register(ctx.session_id, ctx.seat_id, persona.name);
+    logger.info("human.attach", {
+      session_id: ctx.session_id,
+      seat_id: ctx.seat_id,
+      persona_id: persona.id,
+      handle_id: id,
+    });
     return {
       id,
       seat_id: ctx.seat_id,
@@ -92,6 +99,11 @@ export class HumanRuntime implements PersonaRuntime {
 
     bridge.emitFocus(session_id, seat_id, turn_id);
     const inbound = bridge.inboundFor(session_id, seat_id, turn_id);
+    logger.info("human.waiting_for_input", {
+      session_id,
+      seat_id,
+      turn_id,
+    });
 
     async function* iter(): AsyncIterable<string> {
       let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
@@ -105,17 +117,39 @@ export class HumanRuntime implements PersonaRuntime {
       try {
         for await (const msg of inbound) {
           if (msg.kind === "chunk") {
-            if (msg.text.length > 0) yield msg.text;
+            if (msg.text.length > 0) {
+              logger.debug("human.chunk", {
+                session_id,
+                seat_id,
+                turn_id,
+                chunk_length: msg.text.length,
+              });
+              yield msg.text;
+            }
           } else if (msg.kind === "submit") {
-            // Iterator will see done on next pull; queue closed by ingest.
+            logger.info("human.submit", {
+              session_id,
+              seat_id,
+              turn_id,
+            });
             return;
           } else if (msg.kind === "cancel") {
+            logger.info("human.cancel", {
+              session_id,
+              seat_id,
+              turn_id,
+            });
             return;
           }
           // focus/blur shouldn't arrive from the client, ignore if they do.
         }
         if (timedOut) {
-          // Iterable ended due to timeout; resolve with whatever streamed.
+          logger.warn("human.timeout", {
+            session_id,
+            seat_id,
+            turn_id,
+            timeout_ms: timeoutMs,
+          });
           return;
         }
       } finally {

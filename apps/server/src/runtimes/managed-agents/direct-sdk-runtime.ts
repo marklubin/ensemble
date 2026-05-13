@@ -17,6 +17,7 @@ import {
   formatEventsAsTurnPrompt,
   formatBuzzCheckPrompt,
 } from "./prompts.ts";
+import { logger } from "../../logging/index.ts";
 
 /**
  * Plain-SDK fallback. Maintains conversation state in memory keyed by
@@ -64,6 +65,13 @@ export class DirectSdkRuntime implements PersonaRuntime {
       history: [],
       detached: false,
     });
+    logger.info("direct_sdk.attach", {
+      session_id: ctx.session_id,
+      seat_id: ctx.seat_id,
+      persona_id: persona.id,
+      handle_id: id,
+      model_id: this.modelId,
+    });
     return {
       id,
       seat_id: ctx.seat_id,
@@ -79,13 +87,34 @@ export class DirectSdkRuntime implements PersonaRuntime {
     const userText = formatEventsAsTurnPrompt(newEvents);
     state.history.push({ role: "user", content: userText });
 
-    const stream = await this.client.messages.create({
-      model: this.modelId,
-      max_tokens: 1024,
-      system: state.definition.systemPrompt,
-      messages: state.history,
-      stream: true,
+    logger.info("direct_sdk.takeTurn.start", {
+      session_id: state.session_id,
+      seat_id: state.seat_id,
+      handle_id: handle.id,
+      events_in: newEvents.length,
+      history_size: state.history.length,
     });
+
+    let stream;
+    try {
+      stream = await this.client.messages.create({
+        model: this.modelId,
+        max_tokens: 1024,
+        system: state.definition.systemPrompt,
+        messages: state.history,
+        stream: true,
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error("direct_sdk.takeTurn.api_error", {
+        session_id: state.session_id,
+        seat_id: state.seat_id,
+        handle_id: handle.id,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw err;
+    }
 
     let assistantText = "";
     for await (const event of stream as AsyncIterable<AnyEvent>) {
@@ -103,6 +132,13 @@ export class DirectSdkRuntime implements PersonaRuntime {
     if (assistantText.length > 0) {
       state.history.push({ role: "assistant", content: assistantText });
     }
+
+    logger.info("direct_sdk.takeTurn.end", {
+      session_id: state.session_id,
+      seat_id: state.seat_id,
+      handle_id: handle.id,
+      assistant_text_length: assistantText.length,
+    });
   }
 
   async buzzCheck(
