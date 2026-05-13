@@ -38,10 +38,13 @@ export default defineConfig({
   // every spec to be `test.describe.serial`.
   workers: 1,
   reporter: [["list"]],
-  // Skip @live and @prod by default. CLI flags opt in:
-  //   --grep @live  →  real Anthropic
-  //   --grep @prod  →  deployed Fly URL (PLAYWRIGHT_BASE_URL must be set)
-  grepInvert: /@live|@prod/,
+  // Default: skip @live. The prod-smoke spec is filtered by file:
+  //   - When PLAYWRIGHT_BASE_URL is set, only `prod-smoke.spec.ts` runs.
+  //   - Otherwise, `prod-smoke.spec.ts` is excluded entirely.
+  grepInvert: /@live/,
+  testMatch: usingExternal
+    ? "**/prod-smoke.spec.ts"
+    : ["**/*.spec.ts", "!**/prod-smoke.spec.ts"],
   use: {
     baseURL,
     trace: "retain-on-failure",

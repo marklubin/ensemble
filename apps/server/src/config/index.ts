@@ -44,7 +44,10 @@ export function loadConfig(overrides: Partial<Config> = {}): Config {
       | "in-memory"
       | "sqlite",
     memorySqlitePath: readEnv("MEMORY_SQLITE_PATH") ?? "./ensemble.sqlite",
-    testMode: (readEnv("ENSEMBLE_TEST_MODE") ?? "fixture") as
+    // Default to `live` so production never silently swaps the
+    // Anthropic runtime for a fixture runtime. The Playwright config
+    // explicitly sets `ENSEMBLE_TEST_MODE=fixture` for E2E runs.
+    testMode: (readEnv("ENSEMBLE_TEST_MODE") ?? "live") as
       | "fixture"
       | "live",
   };
