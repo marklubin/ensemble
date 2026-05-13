@@ -11,6 +11,7 @@ import {
 import { EventBus, SessionScheduler } from "../scheduler/index.ts";
 import { runtimes as runtimeRegistry } from "../runtimes/index.ts";
 import { sessionStore, type SessionState } from "./store.ts";
+import { setActiveBucket } from "../runtimes/fixture-runtime.ts";
 import type { IPersonaStore } from "../personas/store.ts";
 import { config } from "../config/index.ts";
 import { mintSessionToken } from "../mcp/index.ts";
@@ -142,6 +143,28 @@ sessions.get("/", (c) =>
   c.json({ sessions: sessionStore.list().map(summarizeSession) }),
 );
 
+/**
+ * Test-only: clear the session store and (optionally) switch the
+ * active fixture bucket. Gated on ENSEMBLE_TEST_MODE=fixture so it
+ * can't be used in production. Body: { fixture?: string }.
+ */
+sessions.post("/__reset", async (c) => {
+  if (config().testMode !== "fixture") {
+    return c.json({ error: "forbidden" }, 403);
+  }
+  let body: { fixture?: string } = {};
+  try {
+    const raw = await c.req.json();
+    if (raw && typeof raw === "object") body = raw as { fixture?: string };
+  } catch {
+    // empty body is fine
+  }
+  sessionStore.clear();
+  if (body.fixture) setActiveBucket(body.fixture);
+  else setActiveBucket("default");
+  return c.json({ ok: true, fixture: body.fixture ?? "default" });
+});
+
 sessions.post("/", async (c) => {
   let body: unknown;
   try {
@@ -174,12 +197,21 @@ sessions.post("/", async (c) => {
     detachedHandles: [],
     eventCount: 0,
     started_at: null,
+    start_called: false,
+    start_response_status: null,
+    last_sse_chunk_at: null,
+    pending_runtime_errors: [],
     status: "created",
     created_at: new Date().toISOString(),
   };
-  // Diagnostics: count every event emitted on this session's bus.
-  bus.subscribe(() => {
+  // Diagnostics: count every event emitted on this session's bus, and
+  // record the timestamp of the last turn.delta so E2E specs can
+  // observe scheduler liveness.
+  bus.subscribe((ev) => {
     state.eventCount += 1;
+    if (ev.type === "turn.delta") {
+      state.last_sse_chunk_at = new Date().toISOString();
+    }
   });
   sessionStore.create(state);
   logger.info("session.created", {
@@ -273,7 +305,9 @@ sessions.get("/:id/events", (c) => {
 sessions.post("/:id/start", async (c) => {
   const state = sessionStore.get(c.req.param("id"));
   if (!state) return c.json({ error: "not_found" }, 404);
+  state.start_called = true;
   if (state.status !== "created") {
+    state.start_response_status = 409;
     return c.json(
       { error: "invalid_state", status: state.status },
       409,
@@ -394,6 +428,10 @@ sessions.post("/:id/start", async (c) => {
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
+      state.pending_runtime_errors.push(
+        `attach[${seat.seat_id}]: ${error.message}`,
+      );
+      state.start_response_status = 500;
       logger.error("runtime.attach.failed", {
         session_id: state.session_id,
         seat_id: seat.seat_id,
@@ -425,6 +463,7 @@ sessions.post("/:id/start", async (c) => {
   });
   state.status = "running";
   state.started_at = new Date().toISOString();
+  state.start_response_status = 200;
 
   logger.info("scheduler.kickoff", {
     session_id: state.session_id,
@@ -439,6 +478,7 @@ sessions.post("/:id/start", async (c) => {
     .start()
     .catch((err) => {
       const error = err instanceof Error ? err : new Error(String(err));
+      state.pending_runtime_errors.push(error.message);
       logger.error("scheduler.crashed", {
         session_id: state.session_id,
         error: error.message,
@@ -531,6 +571,12 @@ sessions.get("/:id/__diagnostics", (c) => {
     detached_handles: [...state.detachedHandles],
     event_count: state.eventCount,
     ended: state.status === "ended",
+    status: state.status,
+    start_called: state.start_called,
+    start_response_status: state.start_response_status,
+    started_at: state.started_at,
+    last_sse_chunk_at: state.last_sse_chunk_at,
+    pending_runtime_errors: state.pending_runtime_errors,
     per_seat: perSeat,
     transcript_digest: transcript,
   });

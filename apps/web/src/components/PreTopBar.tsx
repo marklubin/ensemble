@@ -25,8 +25,22 @@ export function PreTopBar({ crumb, showManagePersonas = true }: PreTopBarProps) 
               Manage personas
             </Link>
           )}
-          <button className="pre-topbar-btn" type="button">History</button>
-          <button className="pre-topbar-btn" type="button">Settings</button>
+          <a
+            href="https://marklubin.github.io/ensemble/article.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pre-topbar-btn"
+          >
+            The design ↗
+          </a>
+          <a
+            href="https://github.com/marklubin/ensemble"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pre-topbar-btn"
+          >
+            GitHub ↗
+          </a>
         </div>
       </div>
     </div>

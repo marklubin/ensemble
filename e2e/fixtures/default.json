@@ -1,0 +1,17 @@
+{
+  "default": {
+    "pro": [
+      ["The Pro side ", "opens with a", " strong claim."],
+      ["Pro responds: ", "no, your evidence ", "is shaky."]
+    ],
+    "con": [
+      [" I disagree. ", "Here is why."],
+      [" Still no. ", "You haven't ", "addressed my point."]
+    ],
+    "host": [["Host welcomes you all."]],
+    "moderator": [["Moderator notes: keep it civil."]]
+  },
+  "start-error": {
+    "__error__": "fixture-induced-start-error"
+  }
+}

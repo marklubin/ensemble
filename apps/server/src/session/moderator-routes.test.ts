@@ -37,6 +37,10 @@ function makeRunningSession(id: string): SessionState {
     detachedHandles: [],
     eventCount: 0,
     started_at: null,
+    start_called: false,
+    start_response_status: null,
+    last_sse_chunk_at: null,
+    pending_runtime_errors: [],
     status: "created",
     created_at: new Date().toISOString(),
   };

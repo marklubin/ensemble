@@ -24,6 +24,7 @@ import { MockMcpTransport } from "./claude-code/mock-transport.ts";
 import { LocalCliTransport } from "./claude-code/local-cli-transport.ts";
 import { ChannelCoordinator } from "../channels/coordinator.ts";
 import { ChannelRuntime } from "./channel/index.ts";
+import { createFixtureRuntime, loadFixtures } from "./fixture-runtime.ts";
 
 /** Shared UiBridge instance, mounted at `/ui-bridge` from the root server. */
 export const uiBridge = new UiBridge();
@@ -43,13 +44,21 @@ function anthropic(): Anthropic {
 
 export const runtimes: Record<string, PersonaRuntime> = {};
 
-// Managed Agents (always registered). Auto-detects between the beta
-// API surface and the DirectSdkRuntime fallback per Agent C's design.
-runtimes["managed-agents"] = createManagedAgentsRuntime({
-  client: anthropic(),
-  modelId: "claude-sonnet-4-6",
-  buzzCoordinator,
-});
+// Managed Agents. In E2E test mode (ENSEMBLE_TEST_MODE=fixture) we
+// swap the real runtime for a deterministic fixture-backed
+// RecordedRuntime; everything upstream (scheduler, SSE, React app)
+// stays unchanged. Otherwise we auto-detect between the beta
+// Managed Agents API and the DirectSdkRuntime fallback.
+if (config().testMode === "fixture") {
+  loadFixtures(process.env.ENSEMBLE_E2E_FIXTURES);
+  runtimes["managed-agents"] = createFixtureRuntime();
+} else {
+  runtimes["managed-agents"] = createManagedAgentsRuntime({
+    client: anthropic(),
+    modelId: "claude-sonnet-4-6",
+    buzzCoordinator,
+  });
+}
 
 // Human seat (always registered). UiBridge routes are mounted in apps/server/src/index.ts.
 runtimes["human"] = new HumanRuntime(uiBridge);
