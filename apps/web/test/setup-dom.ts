@@ -11,6 +11,8 @@ export function ensureDom(): void {
   if (!GlobalRegistrator.isRegistered) {
     GlobalRegistrator.register({ url: "http://localhost:5173/" });
   }
+  // React 18's testing library expects this flag.
+  (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 }
 
 ensureDom();

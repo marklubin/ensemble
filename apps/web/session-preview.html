@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ensemble — session preview</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      Standalone preview entry — mounts only the session screen with a
+      fixture event feed so we can iterate without depending on the
+      router wiring (which is orchestrator-only during Phase 1).
+
+      Visit http://localhost:5173/session-preview.html
+    -->
+    <script type="module" src="/src/dev/session-preview.tsx"></script>
+  </body>
+</html>

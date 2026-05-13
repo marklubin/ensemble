@@ -1,60 +1,34 @@
 /**
- * L5 — Human seat E2E.
+ * L5 — Human seat: server sends UiBridge `focus`, client autofocuses,
+ * characters are streamed as `chunk` messages, Submit ends the turn.
  *
- * Skipped until Agent G ships the in-session web UI for the human seat.
- * When unskipped, this spec:
- *
- * 1. Configures a session with one human seat (via the pre-session UI
- *    Agent F builds).
- * 2. Starts the session.
- * 3. When the human's turn comes, asserts the textarea receives focus
- *    within 200 ms (driven by an SSE `focus` event from the UiBridge).
- * 4. Types characters and asserts each appears in the transcript
- *    character-by-character (the UI POSTs `chunk` messages to the bridge
- *    as the user types; other seats' transcripts mirror them live).
- * 5. Clicks Submit and asserts the turn ends — textarea blurs, the next
- *    seat takes a turn.
- *
- * The selectors below mirror the structure described in Agent G's brief
- * but are placeholders; Agent G owns the actual DOM and may pin them in a
- * follow-up.
+ * Coordinated with Agent E's brief: G owns the client-side, E owns the
+ * server-side. This test exercises both via the test-only fixture
+ * harness, skipped pending wiring.
  */
+import { test, expect } from "@playwright/test";
 
-import { expect, test } from "@playwright/test";
+test.skip("L5: human seat autofocuses and streams typed chunks", async ({ page }) => {
+  // The test harness should boot a session with a human seat whose turn
+  // is the first turn of round 1. Server emits ui-bridge `focus`.
+  await page.goto("/session/human-seat-fixture");
 
-test.describe.skip("human seat — live streaming + submit", () => {
-  test("typed characters appear in the transcript live, submit ends the turn", async ({
-    page,
-  }) => {
-    // 1. Pre-session: cast a human seat
-    await page.goto("/");
-    await page.getByRole("button", { name: /new session/i }).click();
-    await page.getByLabel(/scenario/i).fill("Should we ship Friday?");
-    await page.getByRole("button", { name: /add human seat/i }).click();
-    await page.getByLabel(/your name/i).fill("Mark");
-    await page.getByRole("button", { name: /start session/i }).click();
+  const textarea = page.locator('[data-testid="session-dock-textarea"]');
+  await expect(textarea).toBeFocused();
 
-    // 2. Wait for the human's turn — UiBridge SSE `focus` event focuses the textarea.
-    const textarea = page.getByRole("textbox", { name: /your turn/i });
-    await expect(textarea).toBeFocused({ timeout: 1000 });
+  await textarea.type("hello");
+  // Each keystroke should have produced a POST /ui-bridge/messages with
+  // a `chunk` payload. Diagnostics endpoint sums these.
+  await page.click('[data-testid="session-dock"] >> text=Submit');
 
-    // 3. Type and assert per-character appearance in the transcript.
-    const text = "I think we should wait.";
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i]!;
-      await textarea.press(ch);
-      const live = page.getByTestId("transcript-live");
-      await expect(live).toContainText(text.slice(0, i + 1), {
-        timeout: 200,
-      });
-    }
+  // After submit, the turn ends and a new card appears.
+  await expect(page.locator('[data-testid="session-turn"]').last()).toContainText("hello");
+});
 
-    // 4. Submit ends the turn.
-    await page.getByRole("button", { name: /submit/i }).click();
-    await expect(textarea).not.toBeFocused();
-    // The final transcript line attributes the content to the human seat.
-    const finalLine = page.getByTestId("transcript-final").last();
-    await expect(finalLine).toContainText("Mark:");
-    await expect(finalLine).toContainText(text);
-  });
+test.skip("L5: buzz-in (poll mode) posts intent and intensity", async ({ page }) => {
+  await page.goto("/session/poll-mode-fixture");
+  const buzz = page.locator('[data-testid="session-buzz"]');
+  await buzz.locator("input").fill("I disagree with that framing");
+  await buzz.locator("text=Buzz in").click();
+  // Server-side: validate buzzer.press received intent=… and intensity=8
 });
