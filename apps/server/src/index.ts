@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { serveStatic } from "hono/bun";
 import { sessions, setPersonaStore } from "./session/routes.ts";
 import { createModeratorRoutes } from "./session/moderator-routes.ts";
 import { defaultMcpServerHost } from "./mcp/index.ts";
@@ -38,6 +39,23 @@ app.route("/personas", createPersonaRoutes(personas));
 app.route("/templates", createTemplateRoutes());
 app.route("/mcp", mcpHost.app);
 app.route("/ui-bridge", uiBridge.routes);
+
+// In production we serve the built React app from the same machine.
+// Vite emits `apps/web/dist/`; the Dockerfile copies it into the runner
+// image at the same path. Dev mode uses Vite on :5173 directly so this
+// block is a no-op locally.
+if (process.env.NODE_ENV === "production") {
+  app.use(
+    "/*",
+    serveStatic({
+      root: "./apps/web/dist",
+      // SPA fallback: unknown paths fall through to index.html so React
+      // Router handles routing client-side.
+      rewriteRequestPath: (path) =>
+        path.startsWith("/assets/") ? path : "/index.html",
+    }),
+  );
+}
 
 const port = Number(Bun.env.PORT ?? 4111);
 console.log(
