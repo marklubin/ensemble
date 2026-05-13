@@ -1,0 +1,6 @@
+{"type":"message_start","message":{"id":"msg_buzz1","role":"assistant"}}
+{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_buzz1","name":"buzzer.press","input":{}}}
+{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"intensity\":7,\"intent\":\"I want to challenge that framing.\",\"nonce\":\"PLACEHOLDER\"}"}}
+{"type":"content_block_stop","index":0}
+{"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":1}}
+{"type":"message_stop"}
