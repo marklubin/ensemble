@@ -12,6 +12,7 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/server/package.json ./apps/server/
 COPY apps/web/package.json ./apps/web/
+COPY apps/channel-bridge/package.json ./apps/channel-bridge/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/spi-conformance/package.json ./packages/spi-conformance/
 
@@ -34,8 +35,10 @@ COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/server ./apps/server
 COPY --from=builder /app/apps/web/dist ./apps/web/dist
 
-# Make a stub apps/web/package.json so workspaces resolve at runtime
+# Stub package.json files for every workspace, so `bun install` doesn't
+# see a lockfile drift in the runner stage.
 COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
+COPY --from=builder /app/apps/channel-bridge/package.json ./apps/channel-bridge/package.json
 
 RUN bun install --frozen-lockfile --production
 
