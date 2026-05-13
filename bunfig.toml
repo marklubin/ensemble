@@ -1,3 +1,4 @@
 [test]
 # Playwright specs (e2e/**) are run by Playwright, not bun test.
+# Exclude them so `bun test` only runs L1-L4 (and the L6 live tag).
 pathIgnorePatterns = ["**/e2e/**", "**/node_modules/**"]
