@@ -18,3 +18,8 @@ test-results
 playwright-report
 blob-report
 playwright/.cache
+# SQLite memory store
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

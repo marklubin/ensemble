@@ -8,7 +8,7 @@ import { z } from "zod";
  *   ANTHROPIC_API_KEY     — Anthropic API key (optional in fixture/test mode)
  *   MCP_PUBLIC_URL        — Base URL runtimes use to reach the MCP server
  *   JWT_SECRET            — HS256 signing secret for MCP scoped tokens
- *   MEMORY_BACKEND        — "in-memory" | "sqlite"     (default in-memory)
+ *   MEMORY_BACKEND        — "in-memory" | "sqlite"     (default sqlite)
  *   MEMORY_SQLITE_PATH    — sqlite file path           (default ./ensemble.sqlite)
  *   ENSEMBLE_TEST_MODE    — "fixture" | "live"         (default fixture)
  */
@@ -40,7 +40,7 @@ export function loadConfig(overrides: Partial<Config> = {}): Config {
       readEnv("MCP_PUBLIC_URL") ?? `http://127.0.0.1:${readEnv("PORT") ?? 4111}`,
     jwtSecret:
       readEnv("JWT_SECRET") ?? "dev-only-secret-change-me-32-bytes-min",
-    memoryBackend: (readEnv("MEMORY_BACKEND") ?? "in-memory") as
+    memoryBackend: (readEnv("MEMORY_BACKEND") ?? "sqlite") as
       | "in-memory"
       | "sqlite",
     memorySqlitePath: readEnv("MEMORY_SQLITE_PATH") ?? "./ensemble.sqlite",
