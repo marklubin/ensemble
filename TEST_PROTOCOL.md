@@ -64,9 +64,31 @@ Work through these before tagging a new version. Tick each.
 - [ ] Run `ENSEMBLE_TEST_MODE=live bun test apps/server/tests/live/` — green, non-empty turns.
 - [ ] Manually start a session in the browser against the live backend (`ANTHROPIC_API_KEY` set), small cast, 1 round. Watch the script populate in real time.
 
-### Claude Code integration (v1.5)
+### Claude Code integration
 
-- [ ] With `CLAUDE_CODE_RUNTIME_ENABLED=true`, `GET /health` includes `claude-code`.
+The Claude Code runtime ships two transports. **Channels** (default,
+post-v1.5) is the primary path; the CLI subprocess transport remains
+as a fallback. Set `CLAUDE_CODE_TRANSPORT` to pick.
+
+#### Channels (default) — primary path
+
+- [ ] With `CLAUDE_CODE_RUNTIME_ENABLED=true` and
+      `CLAUDE_CODE_TRANSPORT=channel` (or unset), `GET /health`
+      includes `claude-code` and the WS endpoint at
+      `/channels/ws` accepts upgrades.
+- [ ] `apps/channel-bridge/README.md` setup walked through end-to-end:
+      `.mcp.json` configured, `claude --dangerously-load-development-channels server:ensemble`
+      launches the bridge, server logs `registered seat=...`.
+- [ ] Cast a `claude-code`-backed seat in a session whose
+      `(session_id, seat_id)` matches the bridge's env; first turn
+      round-trips through the live Claude session.
+- [ ] L1 unit + L2 conformance + L4 integration pass:
+      `bun test apps/server/src/channels apps/server/src/runtimes/channel apps/server/tests/integration/channel-runtime.test.ts`.
+
+#### CLI subprocess (fallback)
+
+- [ ] With `CLAUDE_CODE_RUNTIME_ENABLED=true` and
+      `CLAUDE_CODE_TRANSPORT=cli`, `GET /health` includes `claude-code`.
 - [ ] Slash-command manifest at `apps/server/src/mcp/slash-command/manifest.json` validates as JSON.
 - [ ] `claude` binary on `$PATH` (or set `CLAUDE_BINARY=/full/path`).
 - [ ] Run the live test:

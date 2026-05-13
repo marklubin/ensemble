@@ -1,0 +1,21 @@
+{
+  "name": "@ensemble/channel-bridge",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "ensemble-channel-bridge": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "ws": "^8.20.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.0"
+  }
+}

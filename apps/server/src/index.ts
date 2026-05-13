@@ -9,7 +9,9 @@ import { createMemoryRoutes } from "./memory/routes.ts";
 import { createPersonaStore } from "./personas/index.ts";
 import { createPersonaRoutes } from "./personas/routes.ts";
 import { createTemplateRoutes } from "./templates/routes.ts";
-import { runtimes, uiBridge } from "./runtimes/index.ts";
+import { runtimes, uiBridge, channelCoordinator } from "./runtimes/index.ts";
+import { createChannelsRoutes } from "./channels/ws-route.ts";
+import { websocket } from "hono/bun";
 
 // Resolve the memory + persona stores per config (default: sqlite).
 const memory = await createMemoryStore();
@@ -39,6 +41,7 @@ app.route("/personas", createPersonaRoutes(personas));
 app.route("/templates", createTemplateRoutes());
 app.route("/mcp", mcpHost.app);
 app.route("/ui-bridge", uiBridge.routes);
+app.route("/channels", createChannelsRoutes(channelCoordinator()));
 
 // In production we serve the built React app from the same machine.
 // Vite emits `apps/web/dist/`; the Dockerfile copies it into the runner
@@ -65,4 +68,5 @@ console.log(
 export default {
   port,
   fetch: app.fetch,
+  websocket,
 };
