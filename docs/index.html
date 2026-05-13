@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ensemble — design</title>
+<style>
+  :root {
+    --bg: #f6f3ec;
+    --bg-2: #efeadf;
+    --ink: #1c1a17;
+    --ink-soft: #3a3631;
+    --muted: #8a8278;
+    --muted-2: #b5ad9e;
+    --rule: #c9bfa9;
+    --rule-soft: #ddd3bb;
+    --accent: #6a4c1f;
+    --debate: #843a3a;
+    --roundtable: #2b5b4e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Iowan Old Style", "Palatino", "Charter", "Georgia", serif; font-size: 17px; line-height: 1.7; }
+
+  .topbar { position: fixed; top: 0; left: 0; right: 0; backdrop-filter: blur(8px); background: rgba(246, 243, 236, 0.85); border-bottom: 1px solid var(--rule-soft); z-index: 10; }
+  .topbar-inner { max-width: 900px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; font-size: 13px; }
+  .brand { font-family: "Iowan Old Style", "Palatino", serif; font-style: italic; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; font-size: 15px; }
+  .topbar .sep { width: 1px; height: 18px; background: var(--rule-soft); }
+  .topbar .crumbs { color: var(--muted); }
+  .topbar .gh { margin-left: auto; color: var(--ink-soft); text-decoration: none; border: 1px solid var(--rule); padding: 3px 9px; border-radius: 3px; font-size: 12px; }
+  .topbar .gh:hover { background: var(--bg-2); }
+
+  .page { max-width: 720px; margin: 0 auto; padding: 96px 32px 80px; }
+
+  .cover { padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 36px; }
+  .cover .kicker { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .cover h1 { font-family: "Iowan Old Style", "Palatino", serif; font-size: 42px; line-height: 1.1; margin: 0 0 16px; letter-spacing: -0.015em; font-weight: 600; }
+  .cover h1 em { font-style: italic; color: var(--accent); }
+  .cover .byline { font-size: 16px; color: var(--ink-soft); font-style: italic; max-width: 600px; }
+
+  h2 { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 44px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+
+  p { margin: 14px 0; }
+  a { color: var(--accent); }
+
+  .doc-list { list-style: none; padding: 0; margin: 14px 0; }
+  .doc-list li { background: #fff; border: 1px solid var(--rule); border-radius: 4px; margin: 10px 0; padding: 18px 22px; transition: border-color 0.15s ease, transform 0.12s ease; }
+  .doc-list li:hover { border-color: var(--ink-soft); transform: translateY(-1px); }
+  .doc-list a.title { display: block; font-family: "Iowan Old Style", serif; font-size: 22px; font-weight: 600; color: var(--ink); text-decoration: none; line-height: 1.25; }
+  .doc-list a.title:hover { color: var(--accent); }
+  .doc-list .blurb { color: var(--ink-soft); font-size: 14.5px; margin: 6px 0 0; }
+  .doc-list .meta { font-family: -apple-system, sans-serif; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; }
+  .doc-list li.superseded a.title { color: var(--muted); text-decoration: line-through; }
+
+  .mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0; }
+  .mockup-card { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 18px 22px; }
+  .mockup-card.archived { opacity: 0.65; }
+  .mockup-card a { font-family: "Iowan Old Style", serif; font-size: 18px; font-weight: 600; color: var(--ink); text-decoration: none; }
+  .mockup-card a:hover { color: var(--accent); }
+  .mockup-card p { font-size: 14px; color: var(--ink-soft); margin: 6px 0 0; }
+  .mockup-card .tag { font-family: -apple-system, sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 8px; }
+
+  footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--rule); font-family: -apple-system, sans-serif; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">ensemble</span>
+    <span class="sep"></span>
+    <span class="crumbs">Design site</span>
+    <a class="gh" href="https://github.com/marklubin/ensemble" target="_blank" rel="noopener">View on GitHub →</a>
+  </div>
+</div>
+
+<main class="page">
+
+  <header class="cover">
+    <div class="kicker">A pluggable runtime architecture for multi-persona sessions</div>
+    <h1>ensemble — a <em>scene simulator</em> where the cast can come from anywhere.</h1>
+    <p class="byline">Multi-persona scenes — debates, roundtables, interviews, writers' rooms — running on a thin scheduler with a pluggable per-seat runtime. Same session can mix Anthropic Managed Agents, a real Claude Code subprocess, and a human at the keyboard.</p>
+  </header>
+
+
+  <h2>Reference docs</h2>
+
+  <ul class="doc-list">
+    <li>
+      <a class="title" href="architecture.html">Architecture (engineering handoff)</a>
+      <p class="blurb">SPI + Host API plug-in pattern. Three runtimes (Anthropic Managed Agents, Claude Code, Human) operation-by-operation. Permission model. Start here.</p>
+      <div class="meta">Reference · v2</div>
+    </li>
+    <li>
+      <a class="title" href="runtime-interface.html">Runtime Interface (SPI + Host API)</a>
+      <p class="blurb">Zod schemas, TypeScript interface, worked adapter examples, scheduler usage. The spec a runtime implements to participate.</p>
+      <div class="meta">Spec · v0.2</div>
+    </li>
+    <li>
+      <a class="title" href="dimensions.html">Session configuration space</a>
+      <p class="blurb">Eight dimensions a session varies along. Templates collapse into preset points. v1 scope and the interesting turn-taking modes (self-select, interruption).</p>
+      <div class="meta">Spec · v0.1</div>
+    </li>
+    <li class="superseded">
+      <a class="title" href="actor-protocol.html">Actor protocol (superseded)</a>
+      <p class="blurb">The earlier draft that reinvented chat-loop / tool-loop / memory primitives instead of delegating to existing runtimes. Kept for reference.</p>
+      <div class="meta">Superseded by runtime-interface</div>
+    </li>
+  </ul>
+
+
+  <h2>Mockups</h2>
+
+  <div class="mockup-grid">
+    <div class="mockup-card">
+      <a href="mockups/templates/index.html">Templates picker →</a>
+      <p>The new-session screen. Pick a format (Debate, Roundtable), see recent sessions, jump to a persona library.</p>
+      <div class="tag">Paper aesthetic · v1</div>
+    </div>
+    <div class="mockup-card">
+      <a href="mockups/script/index.html">Active session (script) →</a>
+      <p>The screenplay-style live read. Speaker in margin caps, dialogue paragraphs flush, moderator as stage direction with tool chips, queue chips, memory affordances.</p>
+      <div class="tag">Paper aesthetic · v1</div>
+    </div>
+    <div class="mockup-card archived">
+      <a href="mockups/chat-room/index.html">Chat-room (archived) →</a>
+      <p>Alternative discussion layout — Discord-style with persona sidebar, kept for design exploration. Not the chosen direction.</p>
+      <div class="tag">Archived</div>
+    </div>
+  </div>
+
+
+  <h2>What ships in v1.5</h2>
+
+  <p>The implementation lives in the repo at <a href="https://github.com/marklubin/ensemble">github.com/marklubin/ensemble</a>:</p>
+
+  <ul>
+    <li><strong>Backend</strong>: Bun + Hono + Zod. Real MCP server with all 11 Host API tools. JWT-scoped tokens per <code>(session, seat)</code>. SQLite-backed memory + persona library.</li>
+    <li><strong>Three working runtimes</strong>: <em>Anthropic</em> (via <code>DirectSdkRuntime</code> while the Managed Agents beta API solidifies), <em>Human</em> (web UI bridge), and <em>Claude Code</em> (<code>LocalCliTransport</code> spawning <code>claude -p</code> per turn with Ensemble's MCP attached).</li>
+    <li><strong>Web client</strong>: React + Vite + React Router. Templates picker, casting, persona library + editor, screenplay session view with streaming SSE, memory panel, moderator controls.</li>
+    <li><strong>Tested</strong>: ~340 unit/integration/contract tests, ~40 component tests, Playwright templates suite, and a live API smoke against real Anthropic + real Claude Code subprocess.</li>
+  </ul>
+
+
+  <footer>
+    <span>ensemble · 2026 · MIT</span>
+    <span><a href="https://github.com/marklubin/ensemble">github.com/marklubin/ensemble</a></span>
+  </footer>
+
+</main>
+
+</body>
+</html>
