@@ -129,8 +129,16 @@ describe("session HTTP routes", () => {
       const lines = buf.split("\n");
       buf = lines.pop() ?? "";
       for (const line of lines) {
-        if (line.startsWith("event:")) {
-          eventTypes.push(line.slice("event:".length).trim());
+        // Server emits unnamed SSE messages (no `event:` line); the
+        // event type lives in the JSON payload's `type` field.
+        if (line.startsWith("data:")) {
+          const json = line.slice("data:".length).trim();
+          try {
+            const parsed = JSON.parse(json) as { type?: string };
+            if (parsed.type) eventTypes.push(parsed.type);
+          } catch {
+            // skip non-JSON lines
+          }
         }
       }
       if (eventTypes.includes("session.end")) break;

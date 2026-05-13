@@ -31,6 +31,7 @@
  */
 
 import { readFileSync, existsSync } from "node:fs";
+import { resolve, isAbsolute, dirname, join } from "node:path";
 import type {
   Capability,
   InstanceHandle,
@@ -64,25 +65,47 @@ let _currentBucket = "default";
  */
 export function loadFixtures(path: string | undefined): void {
   if (!path) return;
-  if (!existsSync(path)) {
+  // Resolve relative paths against several anchors: cwd, the server
+  // package, and the repo root. The server package's CWD is
+  // apps/server/ when launched via workspace filter, so plain relative
+  // paths like ./e2e/fixtures/default.json wouldn't find the file at
+  // the repo root.
+  const candidates: string[] = [];
+  if (isAbsolute(path)) {
+    candidates.push(path);
+  } else {
+    const fromCwd = resolve(process.cwd(), path);
+    candidates.push(fromCwd);
+    // Walk up from cwd looking for the e2e/ directory (cheap fallback).
+    let dir = process.cwd();
+    for (let i = 0; i < 4; i++) {
+      const candidate = join(dir, path);
+      if (!candidates.includes(candidate)) candidates.push(candidate);
+      dir = dirname(dir);
+    }
+  }
+
+  const found = candidates.find((c) => existsSync(c));
+  if (!found) {
     // eslint-disable-next-line no-console
     console.warn(
       JSON.stringify({
         level: "warn",
         msg: "fixture_file_missing",
         path,
+        candidates,
       }),
     );
     return;
   }
   try {
-    _fixtures = JSON.parse(readFileSync(path, "utf-8")) as FixtureFile;
+    _fixtures = JSON.parse(readFileSync(found, "utf-8")) as FixtureFile;
     // eslint-disable-next-line no-console
     console.log(
       JSON.stringify({
         level: "info",
         msg: "fixtures_loaded",
-        path,
+        path: found,
         buckets: Object.keys(_fixtures),
       }),
     );

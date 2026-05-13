@@ -100,10 +100,13 @@ export function sessionIdFromUrl(url: string): string {
  */
 export async function castDebateAndStart(
   page: Page,
-  opts: { scenario?: string; rounds?: number } = {},
+  opts: { scenario?: string; rounds?: number; openEnded?: boolean } = {},
 ): Promise<string> {
   const scenario = opts.scenario ?? "Should we standardize on Bun?";
+  // Default to a finite round count so the fixture-runtime never runs
+  // out of scripted turns. `openEnded: true` explicitly opts in.
   const rounds = opts.rounds ?? 1;
+  const useRounds = !opts.openEnded;
 
   await page.goto("/");
   await page.getByTestId("use-debate").click();
@@ -146,8 +149,8 @@ export async function castDebateAndStart(
     }
   }
 
-  // Length: leave default open-ended unless we explicitly want N rounds.
-  if (opts.rounds) {
+  // Length: default to n-rounds (finite) unless caller opts into open-ended.
+  if (useRounds) {
     // Click the n-rounds radio (its sibling number input becomes editable)
     const roundsRadio = page.locator(
       'input[type="radio"][name="length"]:not(:checked)',
@@ -164,5 +167,69 @@ export async function castDebateAndStart(
   await page.getByTestId("cast-submit").click();
   await page.waitForURL(/\/session\//, { timeout: 10_000 });
 
+  return sessionIdFromUrl(page.url());
+}
+
+/**
+ * Drive the Roundtable template casting flow. Two seats are seeded by
+ * default; `opts.extraPersonas` adds more. No Pro/Con constraint.
+ */
+export async function castRoundtableAndStart(
+  page: Page,
+  opts: {
+    scenario?: string;
+    rounds?: number;
+    extraPersonas?: number;
+    openEnded?: boolean;
+  } = {},
+): Promise<string> {
+  const scenario = opts.scenario ?? "Roundtable on platform tradeoffs.";
+  const rounds = opts.rounds ?? 1;
+  const extra = opts.extraPersonas ?? 0;
+  const useRounds = !opts.openEnded;
+
+  await page.goto("/");
+  await page.getByTestId("use-roundtable").click();
+  await page.waitForURL(/\/casting/);
+
+  await page.getByTestId("scenario-input").fill(scenario);
+
+  for (let i = 0; i < extra; i++) {
+    const addBtn = page.getByRole("button", {
+      name: /\+ add seat|add seat|\+ seat|add persona/i,
+    });
+    if ((await addBtn.count()) > 0) {
+      await addBtn.first().click();
+    }
+  }
+
+  const seats = page.getByTestId(/^cast-seat-\d+$/);
+  const seatCount = await seats.count();
+  for (let i = 0; i < seatCount; i++) {
+    const seat = seats.nth(i);
+    const selects = seat.locator("select");
+    if ((await selects.count()) >= 1) {
+      const opts2 = await selects.nth(0).locator("option").all();
+      for (const o of opts2) {
+        const v = (await o.getAttribute("value")) ?? "";
+        if (v && v !== "" && v !== "—") {
+          await selects.nth(0).selectOption(v);
+          break;
+        }
+      }
+    }
+  }
+
+  if (useRounds) {
+    const roundsRadio = page.locator(
+      'input[type="radio"][name="length"]:not(:checked)',
+    );
+    if ((await roundsRadio.count()) > 0) await roundsRadio.first().click();
+    const roundsNum = page.getByLabel("Number of rounds");
+    if ((await roundsNum.count()) > 0) await roundsNum.fill(String(rounds));
+  }
+
+  await page.getByTestId("cast-submit").click();
+  await page.waitForURL(/\/session\//, { timeout: 10_000 });
   return sessionIdFromUrl(page.url());
 }

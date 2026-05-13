@@ -20,14 +20,39 @@ export type EventSubscriber = (event: SseEvent) => void;
 
 export class EventBus {
   private readonly subscribers = new Set<EventSubscriber>();
+  private readonly history: SseEvent[] = [];
   private closed = false;
 
   /**
    * Subscribe to events. Returns an unsubscribe function.
+   *
+   * Late subscribers (e.g. a browser EventSource that connects after
+   * the scheduler has already emitted some events) opt into a replay
+   * of historical events via `replayHistory: true`. This keeps short
+   * sessions visible in the UI even when the scheduler finishes
+   * before the client's network round-trip completes.
    */
-  subscribe(fn: EventSubscriber): () => void {
+  subscribe(
+    fn: EventSubscriber,
+    opts: { replayHistory?: boolean } = {},
+  ): () => void {
     if (this.closed) {
       throw new Error("EventBus is closed");
+    }
+    if (opts.replayHistory) {
+      // Snapshot so concurrent publishes during replay don't
+      // double-deliver. The subscriber registration happens AFTER the
+      // replay so live events arriving during the replay aren't
+      // missed but also aren't duplicated.
+      const snapshot = [...this.history];
+      for (const ev of snapshot) {
+        try {
+          fn(ev);
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error("[EventBus] replay subscriber threw:", err);
+        }
+      }
     }
     this.subscribers.add(fn);
     return () => this.unsubscribe(fn);
@@ -38,9 +63,10 @@ export class EventBus {
     this.subscribers.delete(fn);
   }
 
-  /** Publish an event to every current subscriber. */
+  /** Publish an event to every current subscriber. Records to history for replay. */
   publish(event: SseEvent): void {
     if (this.closed) return;
+    this.history.push(event);
     // Snapshot so unsubscribes during iteration don't break the loop.
     const snapshot = [...this.subscribers];
     for (const fn of snapshot) {

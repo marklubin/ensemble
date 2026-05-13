@@ -32,9 +32,16 @@ export default defineConfig({
   timeout: 30_000,
   retries: 0,
   fullyParallel: false,
+  // The harness's `POST /sessions/__reset` clears the shared in-memory
+  // session store, so tests can't safely run in parallel against a
+  // single server. workers=1 keeps the suite serial without forcing
+  // every spec to be `test.describe.serial`.
+  workers: 1,
   reporter: [["list"]],
-  // Skip @live by default. `--grep @live` opts in.
-  grepInvert: /@live/,
+  // Skip @live and @prod by default. CLI flags opt in:
+  //   --grep @live  →  real Anthropic
+  //   --grep @prod  →  deployed Fly URL (PLAYWRIGHT_BASE_URL must be set)
+  grepInvert: /@live|@prod/,
   use: {
     baseURL,
     trace: "retain-on-failure",
