@@ -42,6 +42,14 @@ export interface SessionState {
   eventCount: number;
   /** Started-at timestamp set when /start succeeds; null before then. */
   started_at: string | null;
+  /** Diagnostics: did /start get called? Cleared by __reset. */
+  start_called: boolean;
+  /** Diagnostics: HTTP status the last /start call returned. */
+  start_response_status: number | null;
+  /** Diagnostics: ISO timestamp of the last SSE turn.delta emitted. */
+  last_sse_chunk_at: string | null;
+  /** Diagnostics: any runtime errors caught during a turn. */
+  pending_runtime_errors: string[];
   status: "created" | "running" | "ended";
   created_at: string;
 }
@@ -71,6 +79,11 @@ class SessionStore {
 
   delete(id: string): void {
     this.sessions.delete(id);
+  }
+
+  /** Test-only: wipe everything. Used by POST /sessions/__reset. */
+  clear(): void {
+    this.sessions.clear();
   }
 }
 

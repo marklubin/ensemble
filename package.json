@@ -13,7 +13,12 @@
     "test": "bun test && bun --filter @ensemble/web test",
     "test:server": "bun test",
     "test:web": "bun --filter @ensemble/web test",
-    "test:e2e": "bun x playwright test"
+    "test:e2e": "bun x playwright test --grep-invert \"@live|@prod\"",
+    "test:e2e:headed": "bun x playwright test --headed --workers=1 --grep-invert \"@live|@prod\"",
+    "test:e2e:debug": "PWDEBUG=1 bun x playwright test --grep-invert \"@live|@prod\"",
+    "test:e2e:trace": "bun x playwright test --trace on --video on --grep-invert \"@live|@prod\"",
+    "test:e2e:live": "ENSEMBLE_TEST_MODE=live bun x playwright test --grep @live",
+    "test:e2e:prod": "PLAYWRIGHT_BASE_URL=https://ensemble-app.fly.dev bun x playwright test --grep @prod"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

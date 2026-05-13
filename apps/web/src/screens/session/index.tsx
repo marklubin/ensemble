@@ -74,6 +74,34 @@ export function SessionScreen(props: SessionScreenProps = {}) {
     };
   }, [sessionId, fetchImpl, props.metaOverride]);
 
+  // Kick the scheduler. The casting screen only creates the session;
+  // we need to POST /start before the SSE feed will emit anything.
+  // Server returns 409 if already started — fine, ignore. We use a ref
+  // so React StrictMode double-mounts don't fire two starts.
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (!fetchImpl || startedRef.current) return;
+    if (props.metaOverride || props.eventsUrlOverride) return; // tests
+    startedRef.current = true;
+    (async () => {
+      try {
+        const r = await fetchImpl(`/sessions/${sessionId}/start`, {
+          method: "POST",
+        });
+        if (!r.ok && r.status !== 409) {
+          const body = await r.text().catch(() => "");
+          // eslint-disable-next-line no-console
+          console.error(
+            `[session] failed to start ${sessionId}: ${r.status} ${body}`,
+          );
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(`[session] error starting ${sessionId}:`, err);
+      }
+    })();
+  }, [sessionId, fetchImpl, props.metaOverride, props.eventsUrlOverride]);
+
   // Subscribe to SSE feed.
   useEffect(() => {
     const url = props.eventsUrlOverride ?? `/sessions/${sessionId}/events`;
