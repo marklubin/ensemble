@@ -141,10 +141,55 @@ export function SessionScreen(props: SessionScreenProps = {}) {
     };
   }, [sessionId, meta?.human_seat_id, fetchImpl, props.EventSourceCtor]);
 
-  // Auto-scroll on new entries.
+  // Sticky-bottom auto-scroll.
+  //
+  // We auto-scroll the transcript whenever NEW content arrives — both
+  // on new turn entries AND on each streamed chunk — but only if the
+  // user is already pinned to the bottom (within ~120px). If they've
+  // scrolled up to re-read, we leave them alone.
+  //
+  // The "pinned" state is captured at scroll-time, not at render-time,
+  // because reading scrollTop in the same frame as a layout-changing
+  // append would be racy. We use a ref to avoid re-rendering on
+  // every scroll event.
   const pageRef = useRef<HTMLDivElement | null>(null);
+  const stickyBottomRef = useRef(true);
+
   useEffect(() => {
-    pageRef.current?.scrollTo?.({ top: pageRef.current.scrollHeight, behavior: "smooth" });
+    const el = pageRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const distanceFromBottom =
+        el.scrollHeight - (el.scrollTop + el.clientHeight);
+      stickyBottomRef.current = distanceFromBottom < 120;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Total characters streamed in the transcript. Re-runs this effect
+  // whenever any turn grows. Cheap to compute (string lengths only).
+  const totalChars = state.entries.reduce(
+    (n, e) => n + (e.kind === "turn" ? e.turn.text.length : 0),
+    0,
+  );
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    if (!stickyBottomRef.current) return;
+    // Use auto (instant) for chunk-level scrolls so the page doesn't
+    // animate-jitter on every token. Smooth animation kicks in only
+    // when a brand-new turn entry appears.
+    el.scrollTo({ top: el.scrollHeight, behavior: "auto" });
+  }, [totalChars, state.entries.length]);
+
+  // Smooth scroll on entries.length transitions (new turns) so the eye
+  // can track the jump.
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    if (!stickyBottomRef.current) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [state.entries.length]);
 
   const cast = meta?.cast ?? [];

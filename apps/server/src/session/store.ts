@@ -30,6 +30,8 @@ export interface SessionState {
   cast: SeatInfo[];
   turn_taking_mode: TurnTakingMode;
   length: SessionLength;
+  /** Soft target for persona response length, in words. */
+  target_words_per_turn: number;
   bus: EventBus;
   scheduler: SessionScheduler | null;
   /** Per-seat InstanceHandles (typically populated at start time once runtimes attach). */

@@ -97,9 +97,15 @@ export class DirectSdkRuntime implements PersonaRuntime {
 
     let stream;
     try {
+      // Cap max_tokens at ~4× the target word count (a token ≈ 0.75
+      // words on Anthropic's tokenizer for English prose), so a 120-word
+      // target gives ~480 tokens of headroom. Floor at 256 so very low
+      // targets still allow a coherent response.
+      const targetWords = state.ctx.target_words_per_turn ?? 120;
+      const maxTokens = Math.max(256, Math.ceil(targetWords * 4));
       stream = await this.client.messages.create({
         model: this.modelId,
-        max_tokens: 1024,
+        max_tokens: maxTokens,
         system: state.definition.systemPrompt,
         messages: state.history,
         stream: true,

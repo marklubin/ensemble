@@ -190,6 +190,7 @@ sessions.post("/", async (c) => {
     cast: req.cast,
     turn_taking_mode: req.turn_taking_mode,
     length: req.length,
+    target_words_per_turn: req.target_words_per_turn,
     bus,
     scheduler: null,
     handles: new Map(),
@@ -419,6 +420,7 @@ sessions.post("/:id/start", async (c) => {
       cast: state.cast,
       ensemble_mcp_url: mcpUrl,
       ensemble_mcp_token: token,
+      target_words_per_turn: state.target_words_per_turn,
     };
     try {
       logger.info("runtime.attach.start", {

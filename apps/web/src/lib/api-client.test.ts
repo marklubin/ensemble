@@ -77,6 +77,7 @@ describe("api-client mock fallback", () => {
       turn_taking_mode: "shuffled",
       length: { kind: "open-ended" },
       cooldown_rounds: 1,
+      target_words_per_turn: 120,
     });
     expect(r.session_id.startsWith("mock-")).toBe(true);
   });
