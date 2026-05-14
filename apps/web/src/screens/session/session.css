@@ -287,6 +287,45 @@
 
 .session-lines p { margin: 0 0 10px; white-space: pre-wrap; }
 .session-lines p:last-child { margin-bottom: 0; }
+
+/* Rendered markdown (post-stream). The streaming pass uses bare <p>s
+ * above; once turn.end fires we swap in a marked-rendered tree. We
+ * don't want pre-wrap in this mode (marked already preserves line
+ * breaks via <br>), and we want sensible defaults for list / code /
+ * blockquote / table elements. */
+.session-markdown p { margin: 0 0 10px; white-space: normal; }
+.session-markdown p:last-child { margin-bottom: 0; }
+.session-markdown ul, .session-markdown ol { margin: 6px 0 12px; padding-left: 22px; }
+.session-markdown li { margin: 4px 0; }
+.session-markdown li::marker { color: var(--muted, #8a8278); }
+.session-markdown blockquote {
+  margin: 8px 0; padding: 4px 12px;
+  border-left: 3px solid var(--rule, #c9bfa9);
+  color: var(--ink-soft, #3a3631); font-style: italic;
+}
+.session-markdown code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--code-bg, #ece6d5);
+  padding: 1px 5px; border-radius: 3px; font-size: 13.5px;
+}
+.session-markdown pre {
+  background: var(--code-bg, #ece6d5);
+  border: 1px solid var(--rule, #c9bfa9);
+  border-radius: 3px; padding: 10px 12px;
+  overflow-x: auto; margin: 8px 0;
+}
+.session-markdown pre code { background: transparent; padding: 0; font-size: 13px; }
+.session-markdown strong { font-weight: 600; }
+.session-markdown em { font-style: italic; }
+.session-markdown a { color: var(--accent, #6a4c1f); }
+.session-markdown h1, .session-markdown h2, .session-markdown h3 {
+  font-family: "Iowan Old Style", Palatino, serif;
+  font-weight: 600; margin: 12px 0 6px;
+}
+.session-markdown h1 { font-size: 18px; }
+.session-markdown h2 { font-size: 16px; }
+.session-markdown h3 { font-size: 15px; font-style: italic; }
+.session-markdown hr { border: 0; border-top: 1px solid var(--rule, #c9bfa9); margin: 12px 0; }
 .session-line-num {
   font-family: ui-monospace, Menlo, monospace;
   font-size: 10px;

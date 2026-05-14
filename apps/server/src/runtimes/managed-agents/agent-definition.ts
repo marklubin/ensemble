@@ -28,7 +28,11 @@ export interface AgentDefinitionInput {
   persona: PersonaSpec;
   ctx: Pick<
     SessionContext,
-    "ensemble_mcp_url" | "scenario" | "scenario_format" | "cast"
+    | "ensemble_mcp_url"
+    | "scenario"
+    | "scenario_format"
+    | "cast"
+    | "target_words_per_turn"
   >;
 }
 
@@ -52,6 +56,7 @@ export function hashAgentDefinition(input: AgentDefinitionInput): string {
       persona_name: s.persona_name,
       role: s.role ?? null,
     })),
+    target_words_per_turn: input.ctx.target_words_per_turn ?? null,
   });
   return createHash("sha256").update(payload).digest("hex");
 }
@@ -66,7 +71,10 @@ export function hashAgentDefinition(input: AgentDefinitionInput): string {
  */
 export function buildSystemPrompt(
   persona: PersonaSpec,
-  ctx?: Pick<SessionContext, "scenario" | "scenario_format" | "cast">,
+  ctx?: Pick<
+    SessionContext,
+    "scenario" | "scenario_format" | "cast" | "target_words_per_turn"
+  >,
 ): string {
   const parts: string[] = [persona.system_prompt.trim()];
 
@@ -115,6 +123,16 @@ export function buildSystemPrompt(
     parts.push(
       `\nYou have access to these tools via MCP: ${persona.tools_allowed.join(", ")}. ` +
         `Use them when appropriate. During buzz checks you MUST use buzzer.press or buzzer.pass.`,
+    );
+  }
+  if (ctx?.target_words_per_turn) {
+    const w = ctx.target_words_per_turn;
+    parts.push(
+      `\n**Response length.** Keep each turn to about ${w} words — ` +
+        `roughly ${Math.max(1, Math.round(w / 40))} short paragraph${
+          w >= 80 ? "s" : ""
+        }. Make your strongest point and stop; don't pad. ` +
+        `Trust the reader; they'll see your reply alongside the others.`,
     );
   }
   return parts.join("\n");

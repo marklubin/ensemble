@@ -83,6 +83,75 @@ describe("<SessionTurnCard>", () => {
     expect(container.querySelector(".session-speaker.human")).toBeTruthy();
   });
 
+  test("complete: renders rendered markdown (bold + lists + code)", () => {
+    const md =
+      "Roadmaps are **tools**, not *strategy*.\n\n" +
+      "- yesterday's understanding\n" +
+      "- false authority\n\n" +
+      "```\nshipped !== mattered\n```";
+    const { container } = render(
+      <SessionTurnCard
+        turn={{
+          turn_id: "tm",
+          seat_id: "a",
+          speaker: "A",
+          round: 1,
+          text: md,
+          status: "complete",
+          timestamp: TS,
+        }}
+        colorIndex={0}
+      />,
+    );
+    expect(
+      container.querySelector(".session-markdown strong")?.textContent,
+    ).toBe("tools");
+    expect(
+      container.querySelectorAll(".session-markdown li").length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      container.querySelector(".session-markdown code")?.textContent,
+    ).toContain("shipped");
+  });
+
+  test("streaming: does NOT render markdown — asterisks are literal", () => {
+    const { container } = render(
+      <SessionTurnCard
+        turn={{
+          turn_id: "ts",
+          seat_id: "a",
+          speaker: "A",
+          round: 1,
+          text: "**still streaming**",
+          status: "streaming",
+          timestamp: TS,
+        }}
+        colorIndex={0}
+      />,
+    );
+    expect(container.querySelector(".session-markdown")).toBeNull();
+    expect(container.querySelector("strong")).toBeNull();
+    expect(container.textContent ?? "").toContain("**still streaming**");
+  });
+
+  test("escapes HTML — no XSS even when content has a <script>", () => {
+    const { container } = render(
+      <SessionTurnCard
+        turn={{
+          turn_id: "tx",
+          seat_id: "a",
+          speaker: "A",
+          round: 1,
+          text: "Watch this: <script>window.PWNED=1</script>",
+          status: "complete",
+          timestamp: TS,
+        }}
+        colorIndex={0}
+      />,
+    );
+    expect(container.querySelector("script")).toBeNull();
+  });
+
   test("renders multiple paragraphs split on blank lines", () => {
     render(
       <SessionTurnCard

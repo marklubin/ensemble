@@ -36,6 +36,9 @@ export const SessionContext = z.object({
   ensemble_mcp_url: z.string().url(),
   /** Token scoped to (session, seat). Encodes tool permissions. */
   ensemble_mcp_token: z.string(),
+  /** Soft target for response length per turn in words. Plumbed into the
+   *  persona's system prompt. Optional for back-compat with older callers. */
+  target_words_per_turn: z.number().int().min(20).max(600).optional(),
 });
 export type SessionContext = z.infer<typeof SessionContext>;
 
@@ -66,6 +69,12 @@ export const CreateSessionRequest = z.object({
   length: SessionLength.default({ kind: "open-ended" }),
   cooldown_rounds: z.number().int().min(0).default(1),
   host_seat_id: z.string().optional(),
+  /**
+   * Soft target for response length per turn, in words. Plumbed into
+   * each persona's system prompt as "Keep responses to about N words".
+   * Default 120 ≈ 3 short paragraphs; floor 20, ceiling 600.
+   */
+  target_words_per_turn: z.number().int().min(20).max(600).default(120),
 });
 export type CreateSessionRequest = z.infer<typeof CreateSessionRequest>;
 

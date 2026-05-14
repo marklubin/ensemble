@@ -46,6 +46,10 @@ export function CastingScreen() {
     "open-ended",
   );
   const [rounds, setRounds] = useState(3);
+  // Soft target for how long each agent's responses should be. ~120
+  // words is roughly 3 short paragraphs. Goes into every persona's
+  // system prompt so models actually honor it.
+  const [targetWords, setTargetWords] = useState(120);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -143,6 +147,7 @@ export function CastingScreen() {
           ? { kind: "open-ended" }
           : { kind: "n_rounds", n: rounds },
       cooldown_rounds: template.cooldown_rounds,
+      target_words_per_turn: targetWords,
     };
     try {
       const { session_id } = await api.sessions.create(req);
@@ -322,6 +327,41 @@ export function CastingScreen() {
             />
             rounds
           </label>
+        </div>
+
+        <div className="cast-section">Response length</div>
+        <div className="cast-length">
+          <label style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+            <input
+              type="range"
+              min={40}
+              max={400}
+              step={20}
+              value={targetWords}
+              onChange={(e) => setTargetWords(parseInt(e.target.value, 10) || 120)}
+              aria-label="Target words per turn"
+              data-testid="cast-target-words"
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontVariantNumeric: "tabular-nums", minWidth: 72 }}>
+              ~{targetWords} words
+            </span>
+          </label>
+          <span
+            style={{
+              fontStyle: "italic",
+              color: "var(--muted, #8a8278)",
+              fontSize: 13,
+            }}
+          >
+            {targetWords <= 80
+              ? "Concise — one short paragraph."
+              : targetWords <= 160
+              ? "Standard — a few short paragraphs."
+              : targetWords <= 280
+              ? "Longer — let them argue."
+              : "Long-form — full essays."}
+          </span>
         </div>
 
         <div className="cast-footer">

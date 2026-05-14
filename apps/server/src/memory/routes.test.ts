@@ -22,6 +22,7 @@ function makeSessionState(id: string): SessionState {
     detachedHandles: [],
     eventCount: 0,
     started_at: null,
+    target_words_per_turn: 120,
     start_called: false,
     start_response_status: null,
     last_sse_chunk_at: null,
